@@ -1,0 +1,100 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Phase 10 — Enrollments",
+  "collectionId": "phase10-enrollments",
+  "dateExported": "2026-06-05",
+  "version": "1.2",
+  "folders": [
+    { "id": "f01", "name": "🚀 Enrollment Actions", "containerId": "" },
+    { "id": "f02", "name": "🔍 Queries & Reports", "containerId": "" }
+  ],
+  "requests": [
+    {
+      "_id": "r01",
+      "colId": "phase10-enrollments",
+      "containerId": "f01",
+      "name": "Single Enroll Student",
+      "url": "{{base_url}}/api/enrollments",
+      "method": "POST",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"courseId\": \"{{course_id}}\",\n  \"studentId\": \"{{student_id}}\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "r02",
+      "colId": "phase10-enrollments",
+      "containerId": "f01",
+      "name": "Bulk Enroll Students",
+      "url": "{{base_url}}/api/enrollments/bulk",
+      "method": "POST",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"courseId\": \"{{course_id}}\",\n  \"studentIds\": [\n    \"{{student_id_1}}\",\n    \"{{student_id_2}}\"\n  ]\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "r03",
+      "colId": "phase10-enrollments",
+      "containerId": "f01",
+      "name": "Change Status (Drop/Complete)",
+      "url": "{{base_url}}/api/enrollments/{{enrollment_id}}/status",
+      "method": "PATCH",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"status\": \"COMPLETED\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "r04",
+      "colId": "phase10-enrollments",
+      "containerId": "f02",
+      "name": "Get Course Enrollments",
+      "url": "{{base_url}}/api/enrollments/course/{{course_id}}",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" }
+      ],
+      "tests": []
+    },
+    {
+      "_id": "r05",
+      "colId": "phase10-enrollments",
+      "containerId": "f02",
+      "name": "Get Student Enrollments (Admin)",
+      "url": "{{base_url}}/api/enrollments/student/{{student_id}}",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": []
+    },
+    {
+      "_id": "r06",
+      "colId": "phase10-enrollments",
+      "containerId": "f02",
+      "name": "Get My Enrollments (Student view)",
+      "url": "{{base_url}}/api/enrollments/my",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{student_token}}" }
+      ],
+      "tests": []
+    }
+  ]
+}

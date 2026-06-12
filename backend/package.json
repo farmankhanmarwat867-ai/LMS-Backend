@@ -1,0 +1,53 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed:phase8": "node src/seed-phase8.js",
+    "seed:phase9": "node src/seed-phase9.js",
+    "seed:phase10": "node src/seed-phase10.js",
+    "seed:phase11": "node src/seed-phase11.js",
+    "seed:phase12": "node src/seed-phase12.js",
+    "seed:phase13": "node src/seed-phase13.js",
+    "seed:phase14": "node src/seed-phase14.js",
+    "seed:phase15": "node src/seed-phase15.js",
+    "seed:phase16": "node src/seed-phase16.js",
+    "seed:phase17": "node src/seed-phase17.js",
+    "seed:phase18": "node src/seed-phase18.js",
+    "seed:phase19": "node src/seed-phase19.js",
+    "test:phase16": "node test-phase16.js",
+    "test:phase17": "node test-phase17.js",
+    "test:phase18": "node test-phase18.js",
+    "test:phase19": "node test-phase19.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.3",
+    "morgan": "^1.11.0",
+    "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemailer": "^8.0.11",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

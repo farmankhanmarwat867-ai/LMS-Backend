@@ -1,0 +1,22 @@
+/**
+ * System Roles — Enterprise Multi-Tenant LMS/ERP
+ */
+const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  INSTITUTE_ADMIN: 'INSTITUTE_ADMIN',
+  BRANCH_ADMIN: 'BRANCH_ADMIN',
+  TEACHER: 'TEACHER',
+  STUDENT: 'STUDENT',
+  PARENT: 'PARENT',
+};
+
+const ROLE_HIERARCHY = {
+  SUPER_ADMIN: 6,
+  INSTITUTE_ADMIN: 5,
+  BRANCH_ADMIN: 4,
+  TEACHER: 3,
+  STUDENT: 2,
+  PARENT: 1,
+};
+
+module.exports = { ROLES, ROLE_HIERARCHY };
