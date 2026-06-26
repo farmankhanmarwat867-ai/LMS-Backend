@@ -64,14 +64,19 @@ export default function AppRoutes() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 p-6 text-center">
           <h1 className="text-9xl font-black text-primary/10">403</h1>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-4">Access Forbidden</p>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">You do not have the required permissions to view this resource.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 mb-8">You do not have the required permissions to view this resource.</p>
+          <div className="flex gap-4">
+            <a href="/dashboard" className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">Go to Dashboard</a>
+            <a href="/login" className="px-6 py-2 bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 transition-colors">Go to Login</a>
+          </div>
         </div>
       } />
       <Route path="*" element={
         <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 p-6 text-center">
           <h1 className="text-9xl font-black text-primary/10">404</h1>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-4">Page Not Found</p>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">The page you are looking for does not exist or has been moved.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 mb-8">The page you are looking for does not exist or has been moved.</p>
+          <a href="/dashboard" className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">Return to Dashboard</a>
         </div>
       } />
 
