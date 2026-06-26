@@ -21,9 +21,10 @@ const generateNextStudentId = async () => {
   const currentYear = new Date().getFullYear();
   const prefix = `STD-${currentYear}-`;
   
-  // Find the highest studentId for the current year
+  // Find the highest studentId for the current year, including soft-deleted ones so we don't reuse IDs
   const lastStudent = await userRepository.model.findOne({
-    studentId: new RegExp(`^${prefix}`)
+    studentId: new RegExp(`^${prefix}`),
+    isDeleted: { $in: [true, false] } // This bypasses the pre-find hook that excludes soft-deleted docs
   }).sort({ studentId: -1 });
 
   let sequence = 1;
