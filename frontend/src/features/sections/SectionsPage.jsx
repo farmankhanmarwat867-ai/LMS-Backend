@@ -147,7 +147,7 @@ export default function SectionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 items-start">
         <h2 className="text-xl font-bold text-[var(--color-text-[var(--color-primary-pink)])]">Academic Sections</h2>
         <Button onClick={handleOpenCreate} className="gap-2">
           <Plus className="w-4 h-4" />

@@ -171,7 +171,7 @@ export default function EnrollmentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 items-start">
         <div>
           <h2 className="text-xl font-bold text-[var(--color-text-[var(--color-primary-pink)])]">Subject Enrollments</h2>
           <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{enrollments.length} total enrollments</p>

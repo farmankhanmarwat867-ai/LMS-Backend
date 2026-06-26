@@ -150,13 +150,13 @@ export default function Table({
 
       {/* Pagination Controls */}
       {!isLoading && data.length > 0 && (
-        <div className="flex items-center justify-between px-5 py-3.5 bg-card border border-border rounded-xl text-sm shadow-sm">
-          <div className="flex items-center gap-3 text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-5 py-3.5 bg-card border border-border rounded-xl text-sm shadow-sm">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 text-muted-foreground w-full sm:w-auto">
             <span>Show</span>
             <select
               value={activePageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="px-3 py-1.5 bg-background border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-hidden"
+              className="px-3 py-1.5 bg-background border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
             >
               {[5, 10, 25, 50].map((size) => (
                 <option key={size} value={size}>
@@ -167,22 +167,22 @@ export default function Table({
             <span>entries</span>
           </div>
 
-          <div className="flex items-center gap-5">
-            <span className="text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-4 sm:gap-5 w-full sm:w-auto">
+            <span className="text-muted-foreground whitespace-nowrap">
               Page <strong className="text-foreground font-medium">{activePageIndex + 1}</strong> of <strong className="text-foreground font-medium">{activePageCount || 1}</strong>
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               <button
                 onClick={() => handlePageChange(activePageIndex)}
                 disabled={!canPrev}
-                className="p-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-hidden focus:ring-2 focus:ring-primary"
+                className="p-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handlePageChange(activePageIndex + 2)}
                 disabled={!canNext}
-                className="p-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-hidden focus:ring-2 focus:ring-primary"
+                className="p-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

@@ -38,7 +38,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 items-start">
         <div className="flex items-center gap-2">
           <Bell className="w-6 h-6 text-[var(--color-primary-pink)]" />
           <h2 className="text-xl font-bold text-slate-805 dark:text-slate-100">Inbox Notifications</h2>

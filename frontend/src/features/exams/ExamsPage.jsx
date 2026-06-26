@@ -728,7 +728,7 @@ export default function ExamsPage() {
 
   return (
     <div className="space-y-6 relative pb-12">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 items-start">
         <h2 className="text-xl font-bold text-[var(--color-text-[var(--color-primary-pink)])] uppercase tracking-tight">Exam Container</h2>
         
         {/* Toggle tabs */}
