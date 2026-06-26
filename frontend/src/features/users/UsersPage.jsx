@@ -568,7 +568,7 @@ function BulkImportStudentsModal({ isOpen, onClose, branches, classes, sections,
       toast.error('CSV must have a header row and at least one data row');
       return;
     }
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, '').toLowerCase());
     const rows = lines.slice(1).map((line, i) => {
       const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
       const row = {};
