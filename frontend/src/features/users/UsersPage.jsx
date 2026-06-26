@@ -343,13 +343,13 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 items-start">
         <h2 className="text-xl font-bold text-[var(--color-text-[var(--color-primary-pink)])]">User Directory</h2>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {(roleFilter === 'STUDENT') && (
             <Button onClick={() => setBulkImportOpen(true)} variant="outline" className="gap-2">
               <Upload className="w-4 h-4" />
-              <span>Bulk Import Students</span>
+              <span>Bulk Import</span>
             </Button>
           )}
           <Button onClick={handleOpenCreate} className="gap-2">
@@ -651,14 +651,14 @@ function BulkImportStudentsModal({ isOpen, onClose, branches, classes, sections,
       <div className="space-y-5">
 
         {/* Steps Indicator */}
-        <div className="flex items-center gap-2 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
           {['upload', 'preview', 'results'].map((s, idx) => (
             <React.Fragment key={s}>
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${step === s ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-[var(--color-text-secondary)]'}`}>
                 <span>{idx + 1}</span>
                 <span className="capitalize">{s}</span>
               </div>
-              {idx < 2 && <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />}
+              {idx < 2 && <div className="hidden sm:block flex-1 h-px bg-slate-200 dark:bg-slate-700" />}
             </React.Fragment>
           ))}
         </div>

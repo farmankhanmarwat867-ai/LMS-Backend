@@ -22,10 +22,10 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizes = {
-    sm: 'sm:max-w-md',
-    md: 'sm:max-w-lg',
-    lg: 'sm:max-w-2xl',
-    xl: 'sm:max-w-4xl',
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
   };
 
   return (
@@ -37,9 +37,9 @@ export default function Modal({
       />
 
       {/* Modal Box wrapper */}
-      <div className="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+      <div className="flex min-h-screen items-center justify-center p-2 sm:p-4 text-center">
         <div
-          className={`relative transform overflow-hidden rounded-xl bg-white dark:bg-slate-900 text-left shadow-2xl border border-slate-200 dark:border-slate-800 transition-all sm:my-8 sm:w-full ${sizes[size]} p-6`}
+          className={`relative transform overflow-hidden rounded-xl bg-white dark:bg-slate-900 text-left shadow-2xl border border-slate-200 dark:border-slate-800 transition-all sm:my-8 w-full max-w-[95vw] sm:max-w-none ${sizes[size]} p-4 sm:p-6`}
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">

@@ -337,7 +337,7 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 relative z-10 bg-background text-foreground">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 relative z-10 bg-background text-foreground">
           <div className="max-w-7xl mx-auto w-full">
             <PageTransition>
               <Outlet />
