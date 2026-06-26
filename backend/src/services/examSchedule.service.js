@@ -6,15 +6,12 @@ const userRepository = require('../repositories/user.repository');
 const AuditLogger = require('../utils/auditLogger');
 const { ROLES } = require('../constants/roles');
 
-const validateReferences = async (examId, subjectId, courseId, teacherId, tenantFilter) => {
+const validateReferences = async (examId, subjectId, teacherId, tenantFilter) => {
   const exam = await examRepository.findById(examId);
   if (!exam || exam.isDeleted) throw { status: 404, message: 'Exam not found' };
 
   const subject = await subjectRepository.findById(subjectId);
   if (!subject || subject.isDeleted) throw { status: 404, message: 'Subject not found' };
-
-  const course = await courseRepository.findById(courseId);
-  if (!course || course.isDeleted) throw { status: 404, message: 'Course not found' };
 
   const teacher = await userRepository.findById(teacherId);
   if (!teacher || teacher.isDeleted || teacher.role !== ROLES.TEACHER) {
@@ -24,16 +21,15 @@ const validateReferences = async (examId, subjectId, courseId, teacherId, tenant
   // Basic tenant checks
   if (tenantFilter.instituteId) {
     if (exam.instituteId.toString() !== tenantFilter.instituteId.toString()) throw { status: 404, message: 'Exam not found' };
-    if (course.instituteId.toString() !== tenantFilter.instituteId.toString()) throw { status: 404, message: 'Course not found' };
   }
 
-  return { exam, subject, course, teacher };
+  return { exam, subject, teacher };
 };
 
 const createSchedule = async (data, user, tenantFilter) => {
-  const { examId, subjectId, courseId, teacherId, classId, sectionId, examDate, startTime, endTime, totalMarks, passingMarks, roomNumber, instructions } = data;
+  const { examId, subjectId, teacherId, classId, sectionId, examDate, startTime, endTime, totalMarks, passingMarks, roomNumber, instructions } = data;
 
-  const { exam } = await validateReferences(examId, subjectId, courseId, teacherId, tenantFilter);
+  const { exam } = await validateReferences(examId, subjectId, teacherId, tenantFilter);
 
   // Validate passingMarks <= totalMarks
   if (passingMarks > totalMarks) {
@@ -46,14 +42,13 @@ const createSchedule = async (data, user, tenantFilter) => {
     throw { status: 409, message: 'Exam schedule for this subject and class already exists in this exam' };
   }
 
-  // Ensure instituteId and branchId from tenantFilter are applied, or user
-  const instituteId = tenantFilter.instituteId || user.instituteId;
-  const branchId = tenantFilter.branchId || user.branchId;
+  // Ensure instituteId and branchId from tenantFilter are applied, or user, or exam container
+  const instituteId = tenantFilter.instituteId || user.instituteId || exam.instituteId;
+  const branchId = tenantFilter.branchId || user.branchId || exam.branchId;
 
   const schedule = await examScheduleRepository.create({
     examId,
     subjectId,
-    courseId,
     teacherId,
     classId,
     sectionId,
@@ -83,8 +78,8 @@ const createSchedule = async (data, user, tenantFilter) => {
 };
 
 const getSchedules = async (query, user, tenantFilter) => {
-  const { page, limit, examId, subjectId, courseId, classId, sectionId, teacherId, status } = query;
-  return examScheduleRepository.searchSchedules(tenantFilter, { examId, subjectId, courseId, classId, sectionId, teacherId, status }, { page, limit });
+  const { page, limit, examId, subjectId, classId, sectionId, teacherId, status } = query;
+  return examScheduleRepository.searchSchedules(tenantFilter, { examId, subjectId, classId, sectionId, teacherId, status }, { page, limit });
 };
 
 const getScheduleById = async (id, user, tenantFilter) => {
@@ -110,11 +105,10 @@ const updateSchedule = async (id, data, user, tenantFilter) => {
   }
 
   // Handle updates that change references
-  if (data.examId || data.subjectId || data.courseId || data.teacherId) {
+  if (data.examId || data.subjectId || data.teacherId) {
     await validateReferences(
       data.examId || schedule.examId,
       data.subjectId || schedule.subjectId,
-      data.courseId || schedule.courseId,
       data.teacherId || schedule.teacherId,
       tenantFilter
     );

@@ -1,5 +1,5 @@
 const attendanceSessionRepository = require('../repositories/attendanceSession.repository');
-const courseRepository = require('../repositories/course.repository');
+const subjectRepository = require('../repositories/subject.repository');
 const enrollmentRepository = require('../repositories/enrollment.repository');
 const attendanceRepository = require('../repositories/attendance.repository');
 const AuditLogger = require('../utils/auditLogger');
@@ -9,29 +9,29 @@ const { ROLES } = require('../constants/roles');
 const createSession = async (data, user, tenantFilter) => {
   const { courseId, validForMinutes = 15, date, topic = '' } = data;
 
-  const course = await courseRepository.findById(courseId);
+  const course = await subjectRepository.findById(courseId);
   if (!course || course.isDeleted) {
-    throw { status: 404, message: 'Course not found' };
+    throw { status: 404, message: 'Subject not found' };
   }
 
   if (tenantFilter.instituteId && course.instituteId?.toString() !== tenantFilter.instituteId?.toString()) {
-    throw { status: 404, message: 'Course not found' };
+    throw { status: 404, message: 'Subject not found' };
   }
 
   if (user.role === ROLES.TEACHER && course.teacherId?.toString() !== user._id.toString()) {
-    throw { status: 403, message: 'You can only create attendance sessions for your own courses' };
+    throw { status: 403, message: 'You can only create attendance sessions for your own subjects' };
   }
 
   const existingActive = await attendanceSessionRepository.findActiveByCourse(courseId);
   if (existingActive) {
-    throw { status: 409, message: 'An active attendance session already exists for this course' };
+    throw { status: 409, message: 'An active attendance session already exists for this subject' };
   }
 
   // Check if attendance already marked for today
   const attendanceDate = date ? new Date(date) : new Date();
   const existingAttendance = await attendanceRepository.findByCourseAndDate(courseId, attendanceDate);
   if (existingAttendance) {
-    throw { status: 409, message: 'Attendance has already been marked for this course on this date' };
+    throw { status: 409, message: 'Attendance has already been marked for this subject on this date' };
   }
 
   const expiresAt = new Date();
@@ -70,7 +70,7 @@ const getSession = async (id, user, tenantFilter) => {
   }
 
   if (user.role === ROLES.TEACHER && session.teacherId._id?.toString() !== user._id.toString()) {
-    throw { status: 403, message: 'You can only view attendance sessions for your own courses' };
+    throw { status: 403, message: 'You can only view attendance sessions for your own subjects' };
   }
 
   return session;
@@ -84,7 +84,7 @@ const closeSession = async (id, user, tenantFilter) => {
   }
 
   if (user.role === ROLES.TEACHER && session.teacherId._id?.toString() !== user._id.toString()) {
-    throw { status: 403, message: 'You can only close attendance sessions for your own courses' };
+    throw { status: 403, message: 'You can only close attendance sessions for your own subjects' };
   }
 
   if (session.status !== 'ACTIVE') {
@@ -185,7 +185,7 @@ const scanQr = async (data, user, tenantFilter) => {
   });
 
   if (!isEnrolled) {
-    throw { status: 403, message: 'You are not actively enrolled in this course' };
+    throw { status: 403, message: 'You are not actively enrolled in this subject' };
   }
 
   // Check if already scanned

@@ -34,6 +34,22 @@ const subjectSchema = new mongoose.Schema(
       required: [true, 'Branch ID is required'],
     },
 
+    classId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Class',
+      default: null,
+    },
+    sectionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Section',
+      default: null,
+    },
+    teacherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
     status: {
       type: String,
       enum: ['ACTIVE', 'INACTIVE'],

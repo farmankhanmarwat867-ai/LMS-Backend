@@ -3,6 +3,7 @@ const router   = express.Router();
 
 const {
   createUser,
+  bulkImportStudents,
   getAllUsers,
   getUserById,
   updateUser,
@@ -50,6 +51,13 @@ router
     getAllUsers
   );
 
+// POST   /api/users/bulk-import — Bulk import students (IA, BA)
+router.post(
+  '/bulk-import',
+  hasPermission('users:create'),
+  bulkImportStudents
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PARENT-STUDENT RELATIONSHIP ROUTES  (must come BEFORE /:id routes)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,7 +97,13 @@ router
     getUserById
   )
   .put(
-    hasPermission('users:update'),
+    (req, res, next) => {
+      // Allow self-updates without global permission check
+      if (req.user && (req.user.id?.toString() === req.params.id?.toString() || req.user._id?.toString() === req.params.id?.toString())) {
+        return next();
+      }
+      return hasPermission('users:update')(req, res, next);
+    },
     updateUserValidator,
     validate,
     updateUser

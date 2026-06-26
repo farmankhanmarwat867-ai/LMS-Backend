@@ -1,6 +1,7 @@
 const { generateEnrollmentNumber } = require('../models/Enrollment');
 const enrollmentRepository = require('../repositories/enrollment.repository');
 const courseRepository     = require('../repositories/course.repository');
+const subjectRepository    = require('../repositories/subject.repository');
 const userRepository       = require('../repositories/user.repository');
 const { auditLog }         = require('../utils/auditLogger');
 const { ROLES }            = require('../constants/roles');
@@ -31,44 +32,56 @@ const STATUS_AUDIT_ACTION = {
  * Returns { student, course } if valid; throws structured error otherwise.
  */
 const validateEnrollmentEligibility = async (studentId, courseId, instituteId) => {
-  // 1. Verify course exists within the institute
-  const course = await courseRepository.findOne({ _id: courseId, instituteId, isDeleted: false });
+  // 1. Verify course exists
+  const courseQuery = { _id: courseId, isDeleted: false };
+  if (instituteId) {
+    courseQuery.instituteId = instituteId;
+  }
+  const course = await subjectRepository.findOne(courseQuery);
   if (!course) {
-    throw { status: 404, message: 'Course not found in this institute' };
+    throw { status: 404, message: 'Subject not found in this institute' };
   }
 
   // 2. Verify course is ACTIVE (can't enroll in DRAFT or ARCHIVED)
   if (course.status !== 'ACTIVE') {
-    throw { status: 400, message: `Cannot enroll in a course with status: ${course.status}` };
+    throw { status: 400, message: `Cannot enroll in a subject with status: ${course.status}` };
   }
 
-  // 3. Verify student exists within the institute
-  const student = await userRepository.findOne({
+  // 3. Verify student exists
+  const studentQuery = {
     _id: studentId,
-    instituteId,
     role: ROLES.STUDENT,
     isDeleted: false,
-  });
+  };
+  if (instituteId) {
+    studentQuery.instituteId = instituteId;
+  }
+  const student = await userRepository.findOne(studentQuery);
   if (!student) {
     throw { status: 404, message: 'Student not found in this institute' };
   }
 
+  // 4. If no instituteId filter was provided (e.g. SUPER_ADMIN), verify student and course belong to the same institute
+  if (!instituteId && student.instituteId?.toString() !== course.instituteId?.toString()) {
+    throw { status: 400, message: 'Student and Subject belong to different institutes' };
+  }
+
   // 4. Validate Session / Class / Section alignment
   //    A student in Class 10-A cannot be enrolled in a Class 11-B course.
-  if (!student.sessionId || student.sessionId.toString() !== course.sessionId.toString()) {
-    throw { status: 400, message: 'Student Session does not match Course Session' };
+  if (student.sessionId && course.sessionId && student.sessionId.toString() !== course.sessionId.toString()) {
+    throw { status: 400, message: 'Student Session does not match Subject Session' };
   }
-  if (!student.classId || student.classId.toString() !== course.classId.toString()) {
-    throw { status: 400, message: 'Student Class does not match Course Class' };
+  if (student.classId && course.classId && student.classId.toString() !== course.classId.toString()) {
+    throw { status: 400, message: 'Student Class does not match Subject Class' };
   }
-  if (!student.sectionId || student.sectionId.toString() !== course.sectionId.toString()) {
-    throw { status: 400, message: 'Student Section does not match Course Section' };
+  if (student.sectionId && course.sectionId && student.sectionId.toString() !== course.sectionId.toString()) {
+    throw { status: 400, message: 'Student Section does not match Subject Section' };
   }
 
   // 5. Duplicate enrollment check → 409 Conflict
   const duplicate = await enrollmentRepository.checkDuplicate(studentId, courseId);
   if (duplicate) {
-    throw { status: 409, message: 'Student is already enrolled in this course' };
+    throw { status: 409, message: 'Student is already enrolled in this subject' };
   }
 
   // 6. Course capacity check
@@ -77,7 +90,7 @@ const validateEnrollmentEligibility = async (studentId, courseId, instituteId) =
     if (currentCount >= course.maxStudents) {
       throw {
         status: 400,
-        message: `Course capacity reached (${course.maxStudents} students). Cannot enroll more students.`,
+        message: `Subject capacity reached (${course.maxStudents} students). Cannot enroll more students.`,
       };
     }
   }
@@ -91,12 +104,12 @@ const enrollStudent = async (data, creatorUser) => {
   const instituteId = creatorUser.instituteId;
 
   // Validate eligibility (throws on any failure)
-  const { course } = await validateEnrollmentEligibility(studentId, courseId, instituteId);
+  const { student, course } = await validateEnrollmentEligibility(studentId, courseId, instituteId);
 
   // TEACHER restriction: can only enroll into courses they teach
   if (creatorUser.role === ROLES.TEACHER) {
     if (course.teacherId.toString() !== creatorUser._id.toString()) {
-      throw { status: 403, message: 'Teachers can only enroll students into their own courses' };
+      throw { status: 403, message: 'Teachers can only enroll students into their own subjects' };
     }
   }
 
@@ -107,12 +120,12 @@ const enrollStudent = async (data, creatorUser) => {
     studentId,
     courseId,
     // Snapshot fields stored at enrollment time
-    courseTitle: course.title,
+    courseTitle: course.name || course.title,
     teacherId:   course.teacherId,
     // Academic hierarchy from the course
     classId:     course.classId,
     sectionId:   course.sectionId,
-    sessionId:   course.sessionId,
+    sessionId:   student.sessionId || course.sessionId || null,
     // Tenant context
     instituteId: course.instituteId,
     branchId:    course.branchId,
@@ -149,12 +162,16 @@ const bulkEnrollStudents = async ({ courseId, studentIds }, creatorUser) => {
   const instituteId = creatorUser.instituteId;
 
   // Pre-flight: verify the course exists and teacher authorization
-  const course = await courseRepository.findOne({ _id: courseId, instituteId, isDeleted: false });
-  if (!course) throw { status: 404, message: 'Course not found' };
+  const courseQuery = { _id: courseId, isDeleted: false };
+  if (instituteId) {
+    courseQuery.instituteId = instituteId;
+  }
+  const course = await subjectRepository.findOne(courseQuery);
+  if (!course) throw { status: 404, message: 'Subject not found' };
 
   if (creatorUser.role === ROLES.TEACHER) {
     if (course.teacherId.toString() !== creatorUser._id.toString()) {
-      throw { status: 403, message: 'Teachers can only bulk-enroll students into their own courses' };
+      throw { status: 403, message: 'Teachers can only bulk-enroll students into their own subjects' };
     }
   }
 
@@ -221,10 +238,10 @@ const getEnrollmentById = async (id, user, tenantFilter) => {
 };
 
 // ── Get Enrollments for a Specific Course ─────────────────────────────────────
-const getCourseEnrollments = async (courseId, user, tenantFilter) => {
+const getCourseEnrollments = async (courseId, user, tenantFilter, options = {}) => {
   // TEACHER: must own the course
   if (user.role === ROLES.TEACHER) {
-    const course = await courseRepository.findOne({ _id: courseId, ...tenantFilter });
+    const course = await subjectRepository.findOne({ _id: courseId, ...tenantFilter });
     if (!course) {
       throw { status: 404, message: 'Course not found' };
     }
@@ -235,8 +252,9 @@ const getCourseEnrollments = async (courseId, user, tenantFilter) => {
 
   // STUDENT: can only see their own enrollment in that course
   const extraFilter = user.role === ROLES.STUDENT ? { studentId: user._id } : {};
+  if (options.status) extraFilter.status = options.status;
 
-  return enrollmentRepository.searchEnrollments(tenantFilter, { courseId, ...extraFilter });
+  return enrollmentRepository.searchEnrollments(tenantFilter, { courseId, ...extraFilter }, options);
 };
 
 // ── Get Enrollments for a Specific Student ────────────────────────────────────

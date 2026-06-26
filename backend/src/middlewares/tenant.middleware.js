@@ -17,7 +17,13 @@ const tenantGuard = (req, res, next) => {
   const { role, instituteId, branchId } = req.user;
 
   if (role === ROLES.SUPER_ADMIN) {
+    const headerInstituteId = req.headers['x-institute-id'];
+    const headerBranchId = req.headers['x-branch-id'];
+    
     req.tenantFilter = {};
+    if (headerInstituteId) req.tenantFilter.instituteId = headerInstituteId;
+    if (headerBranchId) req.tenantFilter.branchId = headerBranchId;
+    
     return next();
   }
 

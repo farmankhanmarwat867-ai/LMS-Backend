@@ -10,8 +10,14 @@ class FileService {
     const { id: uploadedBy, instituteId, branchId } = userContext;
     const folder = body.folder || 'general';
 
-    // fileData.path is the secure URL returned by Cloudinary
-    const fileUrl = fileData.path;
+    // fileData.path is the secure URL returned by Cloudinary (or local absolute path)
+    let fileUrl = fileData.path;
+    if (fileUrl && !fileUrl.startsWith('http')) {
+      const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+      // convert backslashes to forward slashes for Windows paths
+      const relativePath = fileData.path.replace(/\\/g, '/').replace(/.*uploads\//, 'uploads/');
+      fileUrl = `${baseUrl}/${relativePath}`;
+    }
 
     const newFile = new File({
       fileName: fileData.filename || fileData.originalname, // Cloudinary uses filename or we fallback

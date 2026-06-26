@@ -1,5 +1,5 @@
 const attendanceRepository = require('../repositories/attendance.repository');
-const courseRepository     = require('../repositories/course.repository');
+const subjectRepository     = require('../repositories/subject.repository');
 const enrollmentRepository = require('../repositories/enrollment.repository');
 const AuditLogger          = require('../utils/auditLogger');
 const { ROLES }            = require('../constants/roles');
@@ -24,16 +24,25 @@ const markAttendance = async (data, user, tenantFilter) => {
   const { courseId, date, topic = '', attendees = [] } = data;
 
   // ── 1. Validate course ───────────────────────────────────────────────────
-  const course = await courseRepository.findById(courseId);
+  const course = await subjectRepository.findById(courseId);
   if (!course || course.isDeleted) {
     throw { status: 404, message: 'Course not found' };
   }
 
   if (
     tenantFilter.instituteId &&
+    course.tenantId?.toString() !== tenantFilter.instituteId?.toString() &&
     course.instituteId?.toString() !== tenantFilter.instituteId?.toString()
   ) {
-    throw { status: 404, message: 'Course not found' };
+    throw { status: 404, message: 'Subject not found' };
+  }
+
+  if (
+    tenantFilter.branchId &&
+    course.branchId &&
+    course.branchId?.toString() !== tenantFilter.branchId?.toString()
+  ) {
+    throw { status: 404, message: 'Subject not found' };
   }
 
   // ── 2. Teacher must own the course ────────────────────────────────────────
@@ -41,7 +50,7 @@ const markAttendance = async (data, user, tenantFilter) => {
     user.role === ROLES.TEACHER &&
     course.teacherId?.toString() !== user._id.toString()
   ) {
-    throw { status: 403, message: 'You can only mark attendance for your own courses' };
+    throw { status: 403, message: 'You can only mark attendance for your own subjects' };
   }
 
   // ── 3. Validate attendees — must be enrolled in this course ───────────────
@@ -60,7 +69,7 @@ const markAttendance = async (data, user, tenantFilter) => {
     if (!enrolledStudentIds.has(entry.studentId?.toString())) {
       throw {
         status: 400,
-        message: `Student ${entry.studentId} is not actively enrolled in this course`,
+        message: `Student ${entry.studentId} is not actively enrolled in this subject`,
       };
     }
   }
@@ -70,7 +79,7 @@ const markAttendance = async (data, user, tenantFilter) => {
   if (existing) {
     throw {
       status: 409,
-      message: 'Attendance has already been marked for this course on this date. Use PUT to update.',
+      message: 'Attendance has already been marked for this subject on this date. Use PUT to update.',
     };
   }
 
@@ -140,7 +149,7 @@ const getAttendance = async (query, user, tenantFilter) => {
 
   // TEACHER: only their courses
   if (user.role === ROLES.TEACHER) {
-    const myCourses = await courseRepository.find({ teacherId: user._id, isDeleted: false });
+    const myCourses = await subjectRepository.model.find({ teacherId: user._id, isDeleted: false });
     const myCourseIds = myCourses.map(c => c._id);
     filter.courseId = courseId
       ? courseId   // if courseId already specified, keep it (ownership checked below)
@@ -150,7 +159,7 @@ const getAttendance = async (query, user, tenantFilter) => {
     if (courseId) {
       const isMine = myCourseIds.some(id => id.toString() === courseId.toString());
       if (!isMine) {
-        throw { status: 403, message: 'You can only view attendance for your own courses' };
+        throw { status: 403, message: 'You can only view attendance for your own subjects' };
       }
     }
   }
@@ -184,9 +193,7 @@ const getStudentAttendance = async (studentId, query, user, tenantFilter) => {
   );
 
   // Augment with summary statistics
-  const summary = courseId
-    ? await attendanceRepository.getStudentSummary(studentId, courseId)
-    : null;
+  const summary = await attendanceRepository.getStudentSummary(studentId, courseId);
 
   return { data, pagination, summary };
 };
@@ -232,7 +239,7 @@ const updateAttendance = async (id, data, user, tenantFilter) => {
       if (!enrolledStudentIds.has(entry.studentId?.toString())) {
         throw {
           status: 400,
-          message: `Student ${entry.studentId} is not actively enrolled in this course`,
+          message: `Student ${entry.studentId} is not actively enrolled in this subject`,
         };
       }
     }
@@ -273,9 +280,9 @@ const getAttendanceById = async (id, user, tenantFilter) => {
 
   // Teacher: only their own course's attendance
   if (user.role === ROLES.TEACHER) {
-    const course = await courseRepository.findById(record.courseId);
-    if (course && course.teacherId?.toString() !== user._id.toString()) {
-      throw { status: 403, message: 'You can only view attendance for your own courses' };
+    const course = await subjectRepository.findById(record.courseId);
+    if (!course || course.teacherId?.toString() !== user._id.toString()) {
+      throw { status: 403, message: 'Not authorized to view this record' };
     }
   }
 

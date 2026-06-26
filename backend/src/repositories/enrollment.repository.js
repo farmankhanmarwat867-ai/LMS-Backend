@@ -33,7 +33,7 @@ class EnrollmentRepository extends BaseRepository {
         .limit(limit)
         .populate('studentId',  'name email avatar role')
         .populate('teacherId',  'name email avatar')
-        .populate('courseId',   'title status')
+        .populate('courseId',   'name code status')
         .populate('classId',    'name code')
         .populate('sectionId',  'name')
         .populate('sessionId',  'name startDate endDate isActive')
@@ -42,8 +42,27 @@ class EnrollmentRepository extends BaseRepository {
       Enrollment.countDocuments(query),
     ]);
 
+    const mappedData = data.map(enr => {
+      if (enr.courseId) {
+        enr.courseId = {
+          _id: enr.courseId._id,
+          code: enr.courseId.code || 'N/A',
+          title: enr.courseId.name || enr.courseId.title || 'N/A',
+          status: enr.courseId.status || 'ACTIVE'
+        };
+      } else {
+        enr.courseId = {
+          _id: null,
+          code: 'N/A',
+          title: enr.courseTitle || 'N/A',
+          status: 'ACTIVE'
+        };
+      }
+      return enr;
+    });
+
     return {
-      data,
+      data: mappedData,
       pagination: {
         page,
         limit,
@@ -58,10 +77,10 @@ class EnrollmentRepository extends BaseRepository {
   // ── Find single enrollment by id with full population ──────────────────────
   async findByIdPopulated(id, extraFilter = {}) {
     const query = { _id: id, ...extraFilter };
-    return Enrollment.findOne(query)
+    const enrollment = await Enrollment.findOne(query)
       .populate('studentId',  'name email avatar phone')
       .populate('teacherId',  'name email avatar')
-      .populate('courseId',   'title description status maxStudents')
+      .populate('courseId',   'name code description status maxStudents')
       .populate('classId',    'name code')
       .populate('sectionId',  'name')
       .populate('sessionId',  'name startDate endDate')
@@ -69,6 +88,29 @@ class EnrollmentRepository extends BaseRepository {
       .populate('instituteId','name')
       .populate('createdBy',  'name role')
       .populate('updatedBy',  'name role');
+
+    if (!enrollment) return null;
+
+    const result = enrollment.toObject();
+    if (result.courseId) {
+      result.courseId = {
+        _id: result.courseId._id,
+        code: result.courseId.code || 'N/A',
+        title: result.courseId.name || result.courseId.title || 'N/A',
+        description: result.courseId.description || '',
+        status: result.courseId.status || 'ACTIVE',
+        maxStudents: result.courseId.maxStudents
+      };
+    } else {
+      result.courseId = {
+        _id: null,
+        code: 'N/A',
+        title: result.courseTitle || 'N/A',
+        description: '',
+        status: 'ACTIVE'
+      };
+    }
+    return result;
   }
 
   // ── Count active enrollments in a course (for capacity check) ──────────────
@@ -82,7 +124,13 @@ class EnrollmentRepository extends BaseRepository {
 
   // ── Duplicate check ─────────────────────────────────────────────────────────
   async checkDuplicate(studentId, courseId) {
-    return Enrollment.findOne({ studentId, courseId, isDeleted: false });
+    // Only prevent duplicate enrollment if the student is currently ACTIVE
+    return Enrollment.findOne({ 
+      studentId, 
+      courseId, 
+      status: 'ACTIVE',
+      isDeleted: false 
+    });
   }
 
   // ── Soft-delete all enrollments for a given course (used when course deleted)

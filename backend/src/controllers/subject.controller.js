@@ -19,7 +19,11 @@ const createSubject = async (req, res, next) => {
 // GET /api/subjects
 const getAllSubjects = async (req, res, next) => {
   try {
-    const result = await subjectService.getAllSubjects(req.query, req.tenantFilter);
+    const query = { ...req.query };
+    if (req.user.role === 'TEACHER') {
+      query.teacherId = req.user._id.toString();
+    }
+    const result = await subjectService.getAllSubjects(query, req.tenantFilter);
     return success(res, result.data, 'Subjects fetched successfully', 200, result.pagination);
   } catch (err) {
     next(err);

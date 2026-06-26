@@ -594,12 +594,12 @@ const addComments = async (id, comments, user) => {
  * Roles: INSTITUTE_ADMIN, BRANCH_ADMIN only.
  */
 const publishReportCard = async (id, user) => {
-  if (!['INSTITUTE_ADMIN', 'BRANCH_ADMIN'].includes(user.role)) {
-    throw { status: 403, message: 'Only INSTITUTE_ADMIN or BRANCH_ADMIN can publish report cards' };
+  if (!['INSTITUTE_ADMIN', 'BRANCH_ADMIN', 'TEACHER'].includes(user.role)) {
+    throw { status: 403, message: 'Only INSTITUTE_ADMIN, BRANCH_ADMIN or TEACHER can publish report cards' };
   }
 
   const query = { _id: id, isDeleted: false };
-  if (user.role === 'INSTITUTE_ADMIN') query.instituteId = user.instituteId;
+  if (user.role === 'INSTITUTE_ADMIN' || user.role === 'TEACHER') query.instituteId = user.instituteId;
   if (user.role === 'BRANCH_ADMIN')   query.branchId    = user.branchId;
 
   const card = await ReportCard.findOne(query);
@@ -638,12 +638,12 @@ const publishReportCard = async (id, user) => {
  * Roles: INSTITUTE_ADMIN, BRANCH_ADMIN only.
  */
 const unpublishReportCard = async (id, user) => {
-  if (!['INSTITUTE_ADMIN', 'BRANCH_ADMIN'].includes(user.role)) {
-    throw { status: 403, message: 'Only INSTITUTE_ADMIN or BRANCH_ADMIN can unpublish report cards' };
+  if (!['INSTITUTE_ADMIN', 'BRANCH_ADMIN', 'TEACHER'].includes(user.role)) {
+    throw { status: 403, message: 'Only INSTITUTE_ADMIN, BRANCH_ADMIN or TEACHER can unpublish report cards' };
   }
 
   const query = { _id: id, isDeleted: false };
-  if (user.role === 'INSTITUTE_ADMIN') query.instituteId = user.instituteId;
+  if (user.role === 'INSTITUTE_ADMIN' || user.role === 'TEACHER') query.instituteId = user.instituteId;
   if (user.role === 'BRANCH_ADMIN')   query.branchId    = user.branchId;
 
   const card = await ReportCard.findOne(query);

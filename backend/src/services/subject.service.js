@@ -29,6 +29,9 @@ const createSubject = async (data, user, tenantFilter) => {
     code: data.code.toUpperCase(),
     instituteId: tenantFilter.instituteId,
     branchId: data.branchId,
+    classId: data.classId || null,
+    sectionId: data.sectionId || null,
+    teacherId: data.teacherId || null,
     status: data.status || 'ACTIVE',
     createdBy: user._id,
   });
@@ -52,6 +55,9 @@ const getAllSubjects = async (queryOptions, tenantFilter) => {
   // Optional filters
   if (queryOptions.branchId) query.branchId = queryOptions.branchId;
   if (queryOptions.status) query.status = queryOptions.status;
+  if (queryOptions.teacherId) query.teacherId = queryOptions.teacherId;
+  if (queryOptions.classId) query.classId = queryOptions.classId;
+  if (queryOptions.sectionId) query.sectionId = queryOptions.sectionId;
   if (queryOptions.search) {
     query.$or = [
       { name: { $regex: queryOptions.search, $options: 'i' } },
@@ -63,6 +69,9 @@ const getAllSubjects = async (queryOptions, tenantFilter) => {
     sort: { name: 1 }, // Sort subjects alphabetically
     populate: [
       { path: 'branchId', select: 'name code' },
+      { path: 'classId', select: 'name code' },
+      { path: 'sectionId', select: 'name classId' },
+      { path: 'teacherId', select: 'name email' },
       { path: 'createdBy', select: 'name email' }
     ],
   };
@@ -74,6 +83,9 @@ const getAllSubjects = async (queryOptions, tenantFilter) => {
 const getSubjectById = async (id, tenantFilter) => {
   const subject = await subjectRepository.model.findOne({ _id: id, ...tenantFilter })
     .populate('branchId', 'name code')
+    .populate('classId', 'name code')
+    .populate('sectionId', 'name classId')
+    .populate('teacherId', 'name email')
     .populate('createdBy', 'name email');
     
   if (!subject) throw { status: 404, message: 'Subject not found or access denied' };
@@ -106,6 +118,16 @@ const updateSubject = async (id, data, user, tenantFilter) => {
   delete updatePayload.branchId;
   delete updatePayload.instituteId;
 
+  if (updatePayload.hasOwnProperty('classId')) {
+    updatePayload.classId = updatePayload.classId || null;
+  }
+  if (updatePayload.hasOwnProperty('sectionId')) {
+    updatePayload.sectionId = updatePayload.sectionId || null;
+  }
+  if (updatePayload.hasOwnProperty('teacherId')) {
+    updatePayload.teacherId = updatePayload.teacherId || null;
+  }
+
   const updated = await subjectRepository.updateById(id, {
     ...updatePayload,
     updatedBy: user._id,
@@ -120,7 +142,12 @@ const updateSubject = async (id, data, user, tenantFilter) => {
     metadata: { changedFields: Object.keys(updatePayload) },
   });
 
-  return updated;
+  return await subjectRepository.model.findById(updated._id)
+    .populate('branchId', 'name code')
+    .populate('classId', 'name code')
+    .populate('sectionId', 'name classId')
+    .populate('teacherId', 'name email')
+    .populate('createdBy', 'name email');
 };
 
 // ── Soft Delete Subject ────────────────────────────────────────────────

@@ -1,0 +1,8 @@
+test-*.js
+test-*.ts
+*.test.js
+*.spec.js
+README.md
+.gitignore
+.env*
+! .env.example

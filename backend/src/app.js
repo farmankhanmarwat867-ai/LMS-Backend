@@ -14,7 +14,9 @@ connectDB();
 const app = express();
 
 // ── Security Middleware ────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors({
   origin: process.env.CLIENT_URL || '*',
   credentials: true,
@@ -50,7 +52,7 @@ if (process.env.NODE_ENV === 'development') {
 
 // ── Static Files ───────────────────────────────────────────────────────
 const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ── Health Check ───────────────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -92,6 +94,7 @@ app.use('/api/submissions',   require('./routes/submission.routes'));
 
 // Phase 12 — Attendance Management
 app.use('/api/attendance',    require('./routes/attendance.routes'));
+app.use('/api/daily-attendance', require('./routes/dailyAttendance.routes'));
 
 // Phase 14 — Exam Management
 app.use('/api/exams',         require('./routes/exam.routes'));

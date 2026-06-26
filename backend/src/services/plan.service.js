@@ -63,6 +63,11 @@ const deletePlan = async (id, user) => {
   if (!plan) throw { status: 404, message: 'Plan not found' };
 
   await planRepository.softDelete(id, user._id);
+  
+  // Release unique name constraint
+  await planRepository.model.findByIdAndUpdate(id, {
+    name: `${plan.name}-DELETED-${Date.now()}`
+  });
 
   await auditLog({
     userId: user._id, role: user.role,

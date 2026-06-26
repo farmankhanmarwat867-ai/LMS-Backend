@@ -87,6 +87,20 @@ class FileController {
     try {
       const file = await fileService.getFilePathForDownload(req.params.id, req.user.instituteId);
       
+      const fs = require('fs');
+      const path = require('path');
+      
+      // Determine if file is locally stored
+      if (file.fileUrl && (file.fileUrl.startsWith('/') || file.fileUrl.includes('localhost') || file.fileUrl.includes('127.0.0.1'))) {
+        // extract relative path starting from 'uploads'
+        const relativePath = file.fileUrl.replace(/\\/g, '/').replace(/.*uploads\//, 'uploads/');
+        const filePath = path.resolve(__dirname, '../../', relativePath);
+        
+        if (fs.existsSync(filePath)) {
+          return res.download(filePath, file.originalName);
+        }
+      }
+      
       // Redirect the user directly to the Cloudinary URL
       res.redirect(file.fileUrl);
     } catch (err) {

@@ -47,6 +47,15 @@ class ParentPortalController {
     }
   };
 
+  getChildFees = async (req, res, next) => {
+    try {
+      const fees = await parentPortalService.getChildFees(req.user.id, req.params.childId);
+      return apiResponse.success(res, fees, 'Child fees retrieved successfully');
+    } catch (err) {
+      next(err);
+    }
+  };
+
   getFees = async (req, res, next) => {
     try {
       const fees = await parentPortalService.getFees(req.user.id);

@@ -1,9 +1,10 @@
 const examRepository = require('../repositories/exam.repository');
+const classRepository = require('../repositories/class.repository');
 const AuditLogger = require('../utils/auditLogger');
 const { ROLES } = require('../constants/roles');
 
 const createExam = async (data, user, tenantFilter) => {
-  const { title, examCode, examType, sessionId, classId, sectionId, startDate, endDate, description } = data;
+  const { title, examCode, examType, sessionId, classId, sectionId, startDate, endDate, description, status } = data;
 
   // Validate Dates
   const start = new Date(startDate);
@@ -24,9 +25,14 @@ const createExam = async (data, user, tenantFilter) => {
     throw { status: 409, message: 'An exam with this code already exists in your institute/branch' };
   }
 
-  // Ensure instituteId and branchId from tenantFilter are applied, or user
-  const instituteId = tenantFilter.instituteId || user.instituteId;
-  const branchId = tenantFilter.branchId || user.branchId;
+  const classObj = await classRepository.findById(classId);
+  if (!classObj || classObj.isDeleted) {
+    throw { status: 404, message: 'Class not found' };
+  }
+
+  // Ensure instituteId and branchId from tenantFilter are applied, or user, or class
+  const instituteId = tenantFilter.instituteId || user.instituteId || classObj.instituteId;
+  const branchId = tenantFilter.branchId || user.branchId || classObj.branchId;
 
   const exam = await examRepository.create({
     title,
@@ -38,7 +44,7 @@ const createExam = async (data, user, tenantFilter) => {
     startDate,
     endDate,
     description,
-    status: 'DRAFT',
+    status: status || 'DRAFT',
     instituteId,
     branchId,
     createdBy: user._id,
@@ -99,8 +105,6 @@ const updateExam = async (id, data, user, tenantFilter) => {
   }
 
   const payload = { ...data, updatedBy: user._id };
-  // Cannot update status via this endpoint, use PATCH
-  delete payload.status;
 
   const updatedExam = await examRepository.updateById(id, payload);
 

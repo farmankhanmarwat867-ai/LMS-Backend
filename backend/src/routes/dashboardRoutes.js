@@ -9,6 +9,7 @@ router.use(protect);
 
 router.get('/super', authorize('SUPER_ADMIN'), getSuperAdminStats);
 router.get('/institute', authorize('INSTITUTE_ADMIN'), getInstituteStats);
+router.get('/branch', authorize('BRANCH_ADMIN'), require('../controllers/dashboardController').getBranchAdminStats);
 router.get('/student', authorize('STUDENT'), getStudentStats);
 
 module.exports = router;

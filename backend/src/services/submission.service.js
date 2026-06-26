@@ -24,7 +24,7 @@ const submitAssignment = async (assignmentId, data, user, tenantFilter) => {
     isDeleted: false
   });
   if (!isEnrolled) {
-    throw { status: 403, message: 'You are not enrolled in this course' };
+    throw { status: 403, message: 'You are not enrolled in this subject' };
   }
 
   // 3. Late Check
@@ -156,10 +156,39 @@ const gradeSubmission = async (id, data, user, tenantFilter) => {
   return updated;
 };
 
+// ── Unsubmit Assignment ───────────────────────────────────────────────────────
+const unsubmitAssignment = async (id, user) => {
+  const submission = await submissionRepository.findById(id);
+  if (!submission || submission.isDeleted) throw { status: 404, message: 'Submission not found' };
+
+  if (submission.studentId.toString() !== user._id.toString()) {
+    throw { status: 403, message: 'You can only unsubmit your own assignments' };
+  }
+
+  const assignment = await assignmentRepository.findById(submission.assignmentId);
+  if (!assignment) throw { status: 404, message: 'Assignment not found' };
+
+  if (new Date() > new Date(assignment.dueDate)) {
+    throw { status: 400, message: 'Cannot unsubmit after the due date' };
+  }
+
+  await submissionRepository.hardDelete(id);
+
+  await AuditLogger.log({
+    userId: user._id,
+    role: user.role,
+    action: 'SUBMISSION_UNSUBMITTED',
+    resource: 'Submission',
+    resourceId: id,
+    metadata: { assignmentId: assignment._id },
+  });
+};
+
 module.exports = {
   submitAssignment,
   getSubmissionsByAssignment,
   getMySubmissions,
   getStudentSubmissions,
   gradeSubmission,
+  unsubmitAssignment,
 };

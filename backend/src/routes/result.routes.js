@@ -193,7 +193,7 @@ router.put(
 router.patch(
   '/:id/publish',
   protect,
-  authorize('SUPER_ADMIN', 'INSTITUTE_ADMIN', 'BRANCH_ADMIN'),
+  authorize('SUPER_ADMIN', 'INSTITUTE_ADMIN', 'BRANCH_ADMIN', 'TEACHER'),
   async (req, res, next) => {
     try {
       const result = await resultService.publishResult(req.params.id, req.user);

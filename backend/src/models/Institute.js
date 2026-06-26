@@ -46,6 +46,10 @@ const instituteSchema = new mongoose.Schema(
       taxId: String,
       billingAddress: String,
     },
+    logo: {
+      type: String,
+      default: '',
+    },
     
     // Audit & Soft Delete
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

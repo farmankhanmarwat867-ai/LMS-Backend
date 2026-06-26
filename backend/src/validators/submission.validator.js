@@ -4,7 +4,7 @@ const { validate } = require('../middlewares/validate.middleware');
 const submitAssignmentValidator = [
   param('assignmentId').isMongoId().withMessage('Valid assignment ID is required'),
   body('submissionText').optional().isString(),
-  body('fileUrl').optional().isURL().withMessage('Valid URL is required for fileUrl'),
+  body('fileUrl').optional({ nullable: true, checkFalsy: true }).isURL({ require_tld: false }).withMessage('Valid URL is required for fileUrl'),
   // Ensure at least one is provided
   body().custom((value, { req }) => {
     if (!req.body.submissionText && !req.body.fileUrl) {

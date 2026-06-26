@@ -40,10 +40,10 @@ const createCourse = async (data, creatorUser) => {
   // TEACHER role check: can only create courses for themselves
   if (creatorUser.role === ROLES.TEACHER) {
     if (data.teacherId !== creatorUser._id.toString()) {
-      throw { status: 403, message: 'Teachers can only create courses assigned to themselves' };
+      throw { status: 403, message: 'Teachers can only create subjects assigned to themselves' };
     }
     if (data.branchId !== creatorUser.branchId.toString()) {
-      throw { status: 403, message: 'Teachers can only create courses in their own branch' };
+      throw { status: 403, message: 'Teachers can only create subjects in their own branch' };
     }
   }
 
@@ -59,7 +59,7 @@ const createCourse = async (data, creatorUser) => {
   });
 
   if (duplicate) {
-    throw { status: 409, message: 'This teacher already has a course for this subject in the specified section and session.' };
+    throw { status: 409, message: 'This teacher already has this subject assigned in the specified section and session.' };
   }
 
   const course = await courseRepository.create({
@@ -82,27 +82,112 @@ const createCourse = async (data, creatorUser) => {
 
 // ── Get All Courses ───────────────────────────────────────────────────────────
 const getAllCourses = async (queryOptions, tenantFilter) => {
-  return courseRepository.searchCourses(tenantFilter, queryOptions, queryOptions);
+  const Subject = require('../models/Subject');
+  const query = { ...tenantFilter, isDeleted: { $ne: true } };
+
+  if (queryOptions.teacherId) query.teacherId = queryOptions.teacherId;
+  if (queryOptions.branchId) query.branchId = queryOptions.branchId;
+  if (queryOptions.status) query.status = queryOptions.status;
+
+  if (queryOptions.search) {
+    query.$or = [
+      { name: { $regex: queryOptions.search, $options: 'i' } },
+      { code: { $regex: queryOptions.search, $options: 'i' } },
+    ];
+  }
+
+  const page = parseInt(queryOptions.page) || 1;
+  const limit = parseInt(queryOptions.limit) || 100;
+  const skip = (page - 1) * limit;
+
+  const [subjects, total] = await Promise.all([
+    Subject.find(query)
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('teacherId', 'name email avatar')
+      .populate('classId', 'name code')
+      .populate('sectionId', 'name')
+      .populate('branchId', 'name code'),
+    Subject.countDocuments(query),
+  ]);
+
+  const Enrollment = require('../models/Enrollment');
+
+  const mappedCourses = await Promise.all(subjects.map(async (s) => {
+    const enrolledCount = await Enrollment.countDocuments({
+      courseId: s._id,
+      status: 'ACTIVE',
+      isDeleted: false,
+    });
+
+    return {
+      _id: s._id,
+      title: s.name,
+      code: s.code,
+      description: `Assigned Subject: ${s.name}`,
+      teacherId: s.teacherId || null,
+      subjectId: s._id,
+      classId: s.classId || null,
+      sectionId: s.sectionId || null,
+      status: s.status === 'ACTIVE' ? 'PUBLISHED' : 'DRAFT',
+      branchId: s.branchId,
+      createdBy: s.createdBy || null,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      enrolledCount,
+    };
+  }));
+
+  return {
+    data: mappedCourses,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+      hasNext: page < Math.ceil(total / limit),
+      hasPrev: page > 1,
+    },
+  };
 };
 
 // ── Get Single Course ─────────────────────────────────────────────────────────
 const getCourseById = async (id, tenantFilter) => {
-  const course = await courseRepository.findOne(
-    { _id: id, ...tenantFilter },
-    'teacherId subjectId classId sectionId sessionId branchId createdBy'
-  );
-  if (!course) throw { status: 404, message: 'Course not found or access denied' };
-  return course;
+  const Subject = require('../models/Subject');
+  const subject = await Subject.findOne({ _id: id, ...tenantFilter })
+    .populate('teacherId', 'name email avatar')
+    .populate('classId', 'name code')
+    .populate('sectionId', 'name')
+    .populate('branchId', 'name code');
+
+  if (!subject) throw { status: 404, message: 'Subject not found or access denied' };
+
+  return {
+    _id: subject._id,
+    title: subject.name,
+    code: subject.code,
+    description: `Assigned Subject: ${subject.name}`,
+    teacherId: subject.teacherId || null,
+    subjectId: subject._id,
+    classId: subject.classId || null,
+    sectionId: subject.sectionId || null,
+    status: subject.status === 'ACTIVE' ? 'PUBLISHED' : 'DRAFT',
+    branchId: subject.branchId,
+    createdBy: subject.createdBy || null,
+    createdAt: subject.createdAt,
+    updatedAt: subject.updatedAt,
+  };
 };
 
 // ── Update Course ─────────────────────────────────────────────────────────────
 const updateCourse = async (id, data, updaterUser, tenantFilter) => {
   const existing = await courseRepository.findOne({ _id: id, ...tenantFilter });
-  if (!existing) throw { status: 404, message: 'Course not found or access denied' };
+  if (!existing) throw { status: 404, message: 'Subject not found or access denied' };
 
   // TEACHER role check: can only update their own courses
   if (updaterUser.role === ROLES.TEACHER && existing.teacherId.toString() !== updaterUser._id.toString()) {
-    throw { status: 403, message: 'You can only update your own courses' };
+    throw { status: 403, message: 'You can only update your own subjects' };
   }
 
   // Prevent foreign key changes without full validation
@@ -135,10 +220,10 @@ const updateCourse = async (id, data, updaterUser, tenantFilter) => {
 // ── Change Status ─────────────────────────────────────────────────────────────
 const changeCourseStatus = async (id, status, updaterUser, tenantFilter) => {
   const existing = await courseRepository.findOne({ _id: id, ...tenantFilter });
-  if (!existing) throw { status: 404, message: 'Course not found or access denied' };
+  if (!existing) throw { status: 404, message: 'Subject not found or access denied' };
 
   if (updaterUser.role === ROLES.TEACHER && existing.teacherId.toString() !== updaterUser._id.toString()) {
-    throw { status: 403, message: 'You can only change the status of your own courses' };
+    throw { status: 403, message: 'You can only change the status of your own subjects' };
   }
 
   const updated = await courseRepository.updateById(id, { status, updatedBy: updaterUser._id });
@@ -158,10 +243,10 @@ const changeCourseStatus = async (id, status, updaterUser, tenantFilter) => {
 // ── Delete Course ─────────────────────────────────────────────────────────────
 const deleteCourse = async (id, deleterUser, tenantFilter) => {
   const existing = await courseRepository.findOne({ _id: id, ...tenantFilter });
-  if (!existing) throw { status: 404, message: 'Course not found or access denied' };
+  if (!existing) throw { status: 404, message: 'Subject not found or access denied' };
 
   if (deleterUser.role === ROLES.TEACHER && existing.teacherId.toString() !== deleterUser._id.toString()) {
-    throw { status: 403, message: 'You can only delete your own courses' };
+    throw { status: 403, message: 'You can only delete your own subjects' };
   }
 
   await courseRepository.softDelete(id, deleterUser._id);

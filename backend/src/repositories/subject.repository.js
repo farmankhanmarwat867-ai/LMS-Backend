@@ -27,6 +27,9 @@ class SubjectRepository extends BaseRepository {
       .limit(options.limit)
       .populate([
         { path: 'branchId', select: 'name code' },
+        { path: 'classId', select: 'name code' },
+        { path: 'sectionId', select: 'name classId' },
+        { path: 'teacherId', select: 'name email' },
         { path: 'createdBy', select: 'name email' }
       ]);
   }

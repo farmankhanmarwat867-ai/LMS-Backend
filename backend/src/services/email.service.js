@@ -9,22 +9,23 @@ class EmailService {
    * Creates a Nodemailer transporter based on the current environment.
    */
   _createTransporter() {
-    const isProd = process.env.NODE_ENV === 'production';
+    const provider = process.env.EMAIL_PROVIDER || '';
 
-    if (isProd) {
-      // Production: Use Gmail with App Password
+    if (provider.toLowerCase() === 'gmail') {
       return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
-          user: process.env.SMTP_USER, // e.g., your-email@gmail.com
-          pass: process.env.SMTP_PASS, // 16-digit App Password
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
         },
       });
     } else {
-      // Development/Testing: Use Mailtrap Sandbox
       return nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
-        port: process.env.SMTP_PORT || 2525,
+        port: parseInt(process.env.SMTP_PORT) || 2525,
+        secure: process.env.SMTP_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,

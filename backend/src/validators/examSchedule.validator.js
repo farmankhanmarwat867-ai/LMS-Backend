@@ -17,9 +17,6 @@ const createExamScheduleValidator = [
   body('subjectId')
     .isMongoId().withMessage('Valid subjectId (ObjectId) is required'),
 
-  body('courseId')
-    .isMongoId().withMessage('Valid courseId (ObjectId) is required'),
-
   body('teacherId')
     .isMongoId().withMessage('Valid teacherId (ObjectId) is required'),
 
@@ -72,9 +69,6 @@ const updateExamScheduleValidator = [
 
   body('subjectId')
     .optional().isMongoId().withMessage('Valid subjectId (ObjectId) is required'),
-
-  body('courseId')
-    .optional().isMongoId().withMessage('Valid courseId (ObjectId) is required'),
 
   body('teacherId')
     .optional().isMongoId().withMessage('Valid teacherId (ObjectId) is required'),
@@ -134,7 +128,6 @@ const getExamSchedulesValidator = [
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be 1–100'),
   query('examId').optional().isMongoId().withMessage('examId must be a valid ObjectId'),
   query('subjectId').optional().isMongoId().withMessage('subjectId must be a valid ObjectId'),
-  query('courseId').optional().isMongoId().withMessage('courseId must be a valid ObjectId'),
   query('classId').optional().isMongoId().withMessage('classId must be a valid ObjectId'),
   query('sectionId').optional().isMongoId().withMessage('sectionId must be a valid ObjectId'),
   query('teacherId').optional().isMongoId().withMessage('teacherId must be a valid ObjectId'),

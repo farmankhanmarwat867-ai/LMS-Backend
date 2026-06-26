@@ -25,7 +25,7 @@ class AttendanceRepository extends BaseRepository {
     const [data, total] = await Promise.all([
       this.model
         .find(filter)
-        .populate('courseId',    'title')
+        .populate('courseId',    'name')
         .populate('recordedBy',  'name email avatar')
         .populate('classId',     'name code')
         .populate('sectionId',   'name')
@@ -56,7 +56,7 @@ class AttendanceRepository extends BaseRepository {
   async findByIdPopulated(id, tenantFilter = {}) {
     return this.model
       .findOne({ _id: id, ...tenantFilter, isDeleted: false })
-      .populate('courseId',   'title description')
+      .populate('courseId',   'name code description')
       .populate('recordedBy', 'name email avatar')
       .populate('classId',    'name code')
       .populate('sectionId',  'name')
@@ -107,7 +107,8 @@ class AttendanceRepository extends BaseRepository {
     const [data, total] = await Promise.all([
       this.model
         .find(filter)
-        .populate('courseId',  'title')
+        .populate('courseId',  'name')
+        .populate('classId', 'name')
         .populate('recordedBy','name email')
         .sort(sort)
         .skip(skip)
@@ -139,18 +140,23 @@ class AttendanceRepository extends BaseRepository {
 
   // ── Attendance summary per student for a course ───────────────────────────
   async getStudentSummary(studentId, courseId) {
+    const Types = this.model.base.Types;
+    const matchStage = {
+      isDeleted: false,
+      'attendees.studentId': new Types.ObjectId(studentId),
+    };
+    if (courseId) {
+      matchStage.courseId = new Types.ObjectId(courseId);
+    }
+
     const result = await this.model.aggregate([
       {
-        $match: {
-          courseId:  new (require('mongoose').Types.ObjectId)(courseId),
-          isDeleted: false,
-          'attendees.studentId': new (require('mongoose').Types.ObjectId)(studentId),
-        },
+        $match: matchStage,
       },
       { $unwind: '$attendees' },
       {
         $match: {
-          'attendees.studentId': new (require('mongoose').Types.ObjectId)(studentId),
+          'attendees.studentId': new Types.ObjectId(studentId),
         },
       },
       {

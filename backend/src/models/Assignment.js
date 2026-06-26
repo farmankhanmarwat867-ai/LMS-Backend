@@ -13,7 +13,7 @@ const assignmentSchema = new mongoose.Schema(
     },
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Course',
+      ref: 'Subject',
       required: true,
     },
     teacherId: {

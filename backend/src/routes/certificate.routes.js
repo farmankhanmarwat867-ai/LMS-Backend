@@ -4,6 +4,15 @@ const certificateController = require('../controllers/certificate.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/rbac.middleware');
 
+// ── GET /api/certificates ─────────────────────────────────────────────────────
+// List all certificates for the current institute (protected)
+router.get(
+  '/',
+  protect,
+  authorize('SUPER_ADMIN', 'INSTITUTE_ADMIN', 'BRANCH_ADMIN', 'TEACHER'),
+  certificateController.listCertificates
+);
+
 // ── GET /api/certificates/:id ─────────────────────────────────────────────────
 // Public endpoint (can be accessed by anyone with the QR/link or by users)
 // For security, we might want to keep it open or just rely on the complex ID/Certificate Number.

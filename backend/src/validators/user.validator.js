@@ -37,7 +37,7 @@ const createUserValidator = [
     .isIn(CREATABLE_ROLES).withMessage(`Role must be one of: ${CREATABLE_ROLES.join(', ')}`),
 
   body('phone')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
     .isMobilePhone().withMessage('Please provide a valid phone number'),
 
@@ -48,6 +48,14 @@ const createUserValidator = [
   body('instituteId')
     .optional()
     .isMongoId().withMessage('instituteId must be a valid MongoDB ObjectId'),
+
+  body('classId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId().withMessage('classId must be a valid MongoDB ObjectId'),
+
+  body('sectionId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId().withMessage('sectionId must be a valid MongoDB ObjectId'),
 
   // Parent-specific: array of student ObjectIds to link
   body('parentOf')
@@ -67,22 +75,32 @@ const updateUserValidator = [
     .isLength({ min: 2, max: 80 }).withMessage('Name must be between 2 and 80 characters'),
 
   body('phone')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
     .isMobilePhone().withMessage('Please provide a valid phone number'),
 
   body('avatar')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
-    .isURL().withMessage('Avatar must be a valid URL'),
+    .isURL({ require_tld: false }).withMessage('Avatar must be a valid URL'),
 
   body('branchId')
     .optional()
     .isMongoId().withMessage('branchId must be a valid MongoDB ObjectId'),
 
-  // Prevent sensitive field changes via update
+  body('classId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId().withMessage('classId must be a valid MongoDB ObjectId'),
+
+  body('sectionId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId().withMessage('sectionId must be a valid MongoDB ObjectId'),
+
   body('email')
-    .not().exists().withMessage('Email cannot be changed via this endpoint'),
+    .optional()
+    .trim()
+    .isEmail().withMessage('Please provide a valid email address')
+    .normalizeEmail(),
 
   body('password')
     .not().exists().withMessage('Use /auth/change-password to update the password'),
@@ -114,12 +132,16 @@ const listUsersValidator = [
 
   query('limit')
     .optional()
-    .isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100'),
+    .isInt({ min: 1, max: 1000 }).withMessage('limit must be between 1 and 1000'),
 
   query('search')
     .optional()
     .trim()
     .isLength({ max: 100 }).withMessage('search query too long'),
+
+  query('classId')
+    .optional()
+    .isMongoId().withMessage('classId must be a valid MongoDB ObjectId'),
 ];
 
 module.exports = {

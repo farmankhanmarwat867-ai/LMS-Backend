@@ -58,4 +58,11 @@ router.patch(
   submissionController.gradeSubmission
 );
 
+// Unsubmit an Assignment (Student)
+router.delete(
+  '/:id',
+  hasPermission('submissions:create'),
+  submissionController.unsubmitAssignment
+);
+
 module.exports = router;

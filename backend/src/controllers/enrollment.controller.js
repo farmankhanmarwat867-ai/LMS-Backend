@@ -54,9 +54,9 @@ const getEnrollmentById = async (req, res, next) => {
 const getCourseEnrollments = async (req, res, next) => {
   try {
     const { data, pagination } = await enrollmentService.getCourseEnrollments(
-      req.params.courseId, req.user, req.tenantFilter
+      req.params.courseId, req.user, req.tenantFilter, req.query
     );
-    return success(res, data, 'Course enrollments retrieved successfully', 200, pagination);
+    return success(res, data, 'Subject enrollments retrieved successfully', 200, pagination);
   } catch (err) {
     next(err);
   }

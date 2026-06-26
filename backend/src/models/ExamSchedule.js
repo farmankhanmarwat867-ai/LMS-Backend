@@ -19,11 +19,6 @@ const examScheduleSchema = new mongoose.Schema(
       ref: 'Subject',
       required: [true, 'subjectId is required'],
     },
-    courseId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Course',
-      required: [true, 'courseId is required'],
-    },
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

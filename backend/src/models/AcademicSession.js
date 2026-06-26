@@ -101,6 +101,10 @@ academicSessionSchema.virtual('durationDays').get(function () {
   return null;
 });
 
+academicSessionSchema.virtual('isCurrent').get(function () {
+  return this.status === 'ACTIVE';
+});
+
 academicSessionSchema.set('toJSON', { virtuals: true });
 academicSessionSchema.set('toObject', { virtuals: true });
 

@@ -128,7 +128,7 @@ router.patch(
 router.patch(
   '/:id/publish',
   protect,
-  authorize('INSTITUTE_ADMIN', 'BRANCH_ADMIN'),
+  authorize('INSTITUTE_ADMIN', 'BRANCH_ADMIN', 'TEACHER'),
   idParamValidator,
   validate,
   controller.publishReportCard
@@ -142,7 +142,7 @@ router.patch(
 router.patch(
   '/:id/unpublish',
   protect,
-  authorize('INSTITUTE_ADMIN', 'BRANCH_ADMIN'),
+  authorize('INSTITUTE_ADMIN', 'BRANCH_ADMIN', 'TEACHER'),
   idParamValidator,
   validate,
   controller.unpublishReportCard

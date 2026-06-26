@@ -27,6 +27,10 @@ const updateExamValidator = [
   body('startDate').optional().isISO8601().withMessage('Valid startDate is required').toDate(),
   body('endDate').optional().isISO8601().withMessage('Valid endDate is required').toDate(),
   body('description').optional().isString().trim(),
+  body('status')
+    .optional()
+    .isIn(['DRAFT', 'SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'])
+    .withMessage('Invalid status'),
   validate,
 ];
 

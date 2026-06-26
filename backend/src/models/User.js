@@ -58,6 +58,22 @@ const userSchema = new mongoose.Schema(
       ref: 'Section',
       default: null,
     },
+    studentId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows null/undefined for non-students
+      trim: true,
+    },
+    qrCodeValue: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+    rollNumber: {
+      type: String,
+      trim: true,
+    },
 
     // PARENT relationship
     parentOf: [
@@ -66,6 +82,10 @@ const userSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+
+    // Password Reset Fields
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpire: { type: Date, default: null },
 
     // Status & Soft Delete
     isActive: { type: Boolean, default: true },

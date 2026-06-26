@@ -40,6 +40,7 @@ const createInstitute = async (data, user) => {
           phone: data.phone,
           address: data.address,
           planId: data.planId,
+          logo: data.logo,
           billingDetails: data.billingDetails,
           createdBy: user._id,
         },
@@ -71,7 +72,9 @@ const createInstitute = async (data, user) => {
 
     return { institute, adminUser: { id: adminUser._id, name: adminUser.name, email: adminUser.email } };
   } catch (error) {
-    await session.abortTransaction();
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     session.endSession();
     throw error;
   }
@@ -81,6 +84,17 @@ const createInstitute = async (data, user) => {
 const getAllInstitutes = async (queryOptions) => {
   const query = {};
   if (queryOptions.status) query.status = queryOptions.status;
+  if (queryOptions.planId) query.planId = queryOptions.planId;
+  if (queryOptions._id) query._id = queryOptions._id;
+  
+  if (queryOptions.search) {
+    const searchRegex = new RegExp(queryOptions.search, 'i');
+    query.$or = [
+      { name: searchRegex },
+      { code: searchRegex },
+      { email: searchRegex }
+    ];
+  }
 
   // SUPER_ADMIN gets all. Since this is a SUPER_ADMIN route primarily, we just return paginated results.
   return paginate(instituteRepository.model, query, { ...queryOptions, populate: 'planId' });
@@ -137,8 +151,22 @@ const deleteInstitute = async (id, user) => {
 
   await instituteRepository.softDelete(id, user._id);
   
-  // Also suspend all users belonging to this institute
-  await userRepository.model.updateMany({ instituteId: id }, { isActive: false, updatedBy: user._id });
+  // Release unique code constraint
+  await instituteRepository.model.findByIdAndUpdate(id, {
+    code: `${institute.code}-DELETED-${Date.now()}`
+  });
+
+  // Soft-delete all users belonging to this institute and release their emails to prevent unique index collision
+  const users = await userRepository.model.find({ instituteId: id });
+  for (const u of users) {
+    await userRepository.model.findByIdAndUpdate(u._id, {
+      isDeleted: true,
+      deletedAt: new Date(),
+      isActive: false,
+      email: `${u.email}-deleted-${Date.now()}`,
+      updatedBy: user._id
+    });
+  }
 
   await auditLog({ userId: user._id, role: user.role, action: 'SOFT_DELETE', resource: 'Institute', resourceId: id });
 };

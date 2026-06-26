@@ -103,7 +103,8 @@ class ParentPortalService {
     const records = await Attendance.find({
       'attendees.studentId': childId,
     })
-      .populate('courseId', 'title')
+      .populate('courseId', 'name')
+      .populate('classId', 'name')
       .sort({ date: -1 })
       .lean();
 
@@ -118,7 +119,8 @@ class ParentPortalService {
       }
       return {
         date: rec.date,
-        course: rec.courseId?.title,
+        courseId: rec.courseId,
+        classId: rec.classId,
         topic: rec.topic,
         status: entry?.status || 'UNKNOWN',
         remarks: entry?.remarks || '',
@@ -154,7 +156,11 @@ class ParentPortalService {
       isDeleted: false,
       status: 'PUBLISHED',
     })
-      .populate('courseId', 'title')
+      .populate({ 
+        path: 'courseId', 
+        select: 'name classId', 
+        populate: { path: 'classId', select: 'name' } 
+      })
       .sort({ dueDate: 1 })
       .lean();
 
@@ -179,15 +185,21 @@ class ParentPortalService {
         status = 'OVERDUE';
       }
 
+      let courseString = 'N/A';
+      if (a.courseId) {
+        const className = a.courseId.classId?.name || '';
+        courseString = className ? `${className} - ${a.courseId.name}` : a.courseId.name;
+      }
+
       return {
         _id: a._id,
         title: a.title,
-        course: a.courseId?.title,
+        course: courseString,
         dueDate: a.dueDate,
-        maxScore: a.maxScore,
+        maxMarks: a.maxMarks,
         status,
         submittedAt: sub ? sub.submittedAt : null,
-        score: sub?.score || null,
+        marksObtained: sub?.marksObtained !== undefined ? sub.marksObtained : null,
         feedback: sub?.feedback || null,
       };
     });
@@ -251,16 +263,35 @@ class ParentPortalService {
       .lean();
 
     return invoices.map(inv => ({
-      _id: inv._id,
-      invoiceNumber: inv.invoiceNumber,
+      ...inv,
       studentName: inv.studentId?.name,
-      feeStructure: inv.feeStructureId?.name,
-      totalAmount: inv.totalAmount,
-      balance: inv.balance,
-      dueDate: inv.dueDate,
-      status: inv.status,
+      structureName: inv.feeStructureId?.name,
     }));
   }
+
+  /**
+   * Get fees for a specific child
+   */
+  async getChildFees(parentId, childId) {
+    await this._verifyChildAccess(parentId, childId);
+
+    const invoices = await FeeInvoice.find({
+      studentId: childId,
+      isDeleted: false,
+    })
+      .populate('studentId', 'name')
+      .populate('feeStructureId', 'name')
+      .sort({ dueDate: 1 })
+      .lean();
+
+    return invoices.map(inv => ({
+      ...inv,
+      studentName: inv.studentId?.name,
+      structureName: inv.feeStructureId?.name,
+    }));
+  }
+
+
 }
 
 module.exports = new ParentPortalService();

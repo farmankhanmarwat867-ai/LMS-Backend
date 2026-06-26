@@ -28,6 +28,21 @@ const createSubjectValidator = [
     .isMongoId()
     .withMessage('Branch ID must be a valid MongoID'),
 
+  body('classId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId()
+    .withMessage('Class ID must be a valid MongoID'),
+
+  body('sectionId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId()
+    .withMessage('Section ID must be a valid MongoID'),
+
+  body('teacherId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId()
+    .withMessage('Teacher ID must be a valid MongoID'),
+
   body('status')
     .optional()
     .isIn(['ACTIVE', 'INACTIVE'])
@@ -52,6 +67,21 @@ const updateSubjectValidator = [
     .withMessage('Code must be alphanumeric')
     .isLength({ max: 20 })
     .withMessage('Code must not exceed 20 characters'),
+
+  body('classId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId()
+    .withMessage('Class ID must be a valid MongoID'),
+
+  body('sectionId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId()
+    .withMessage('Section ID must be a valid MongoID'),
+
+  body('teacherId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId()
+    .withMessage('Teacher ID must be a valid MongoID'),
 
   body('status')
     .optional()

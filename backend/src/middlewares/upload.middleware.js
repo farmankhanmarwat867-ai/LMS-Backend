@@ -33,27 +33,64 @@ const getFileType = (mimeType) => {
   return 'OTHER';
 };
 
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../config/cloudinary');
+let storage;
 
-// Storage configuration (Cloudinary)
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    let folderName = req.body.folder || 'general';
-    if (!ALLOWED_FOLDERS.includes(folderName)) {
-      folderName = 'general';
+// Use Cloudinary in production, or if FORCE_CLOUDINARY is explicitly true.
+// Otherwise, default to local disk storage for development.
+const useCloudinary = process.env.FORCE_CLOUDINARY === 'true' || 
+                      (process.env.NODE_ENV === 'production' && 
+                       process.env.CLOUDINARY_CLOUD_NAME && 
+                       process.env.CLOUDINARY_API_KEY && 
+                       process.env.CLOUDINARY_API_SECRET);
+
+if (useCloudinary) {
+  try {
+    const { CloudinaryStorage } = require('multer-storage-cloudinary');
+    const cloudinary = require('../config/cloudinary');
+
+    storage = new CloudinaryStorage({
+      cloudinary: cloudinary,
+      params: async (req, file) => {
+        let folderName = req.body.folder || 'general';
+        if (!ALLOWED_FOLDERS.includes(folderName)) {
+          folderName = 'general';
+        }
+
+        return {
+          folder: `lms/${folderName}`,
+          resource_type: 'auto', 
+          public_id: `${Date.now()}-${Math.round(Math.random() * 1E9)}`,
+        };
+      },
+    });
+    console.log('[Upload Middleware] Using Cloudinary Storage');
+  } catch (err) {
+    console.error('[Upload Middleware] Cloudinary storage initialization failed. Falling back to Disk Storage:', err.message);
+  }
+}
+
+if (!storage) {
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      let folderName = req.body.folder || 'general';
+      if (!ALLOWED_FOLDERS.includes(folderName)) {
+        folderName = 'general';
+      }
+      
+      const uploadDir = path.join(__dirname, '../../uploads', folderName);
+      
+      // Ensure destination directory exists
+      fs.mkdirSync(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+      const ext = path.extname(file.originalname);
+      cb(null, `${uniqueSuffix}${ext}`);
     }
-
-    return {
-      folder: `lms/${folderName}`,
-      // Cloudinary handles file types, but we'll accept common ones
-      // raw allows non-image files like PDFs, Docs, etc.
-      resource_type: 'auto', 
-      public_id: `${Date.now()}-${Math.round(Math.random() * 1E9)}`,
-    };
-  },
-});
+  });
+  console.log('[Upload Middleware] Using Local Disk Storage');
+}
 
 // File filter for security
 const fileFilter = (req, file, cb) => {

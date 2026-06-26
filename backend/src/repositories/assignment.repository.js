@@ -20,7 +20,7 @@ class AssignmentRepository extends BaseRepository {
 
     const data = await this.model
       .find(filter)
-      .populate('courseId', 'title')
+      .populate('courseId', 'name code')
       .populate('teacherId', 'name email avatar')
       .sort(sort)
       .skip(skip)
@@ -44,7 +44,7 @@ class AssignmentRepository extends BaseRepository {
   async findByIdPopulated(id, tenantFilter = {}) {
     const query = { _id: id, ...tenantFilter, isDeleted: false };
     return this.model.findOne(query)
-      .populate('courseId', 'title description')
+      .populate('courseId', 'name code')
       .populate('teacherId', 'name email avatar')
       .populate('instituteId', 'name')
       .populate('branchId', 'name')

@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
 
-const { login, register, getMe, changePassword, logout, refreshToken } = require('../controllers/auth.controller');
+const { 
+  login, 
+  register, 
+  getMe, 
+  changePassword, 
+  logout, 
+  refreshToken,
+  forgotPassword,
+  resetPassword 
+} = require('../controllers/auth.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/rbac.middleware');
 const { validate } = require('../middlewares/validate.middleware');
@@ -10,11 +19,15 @@ const {
   registerValidator,
   changePasswordValidator,
   refreshTokenValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator
 } = require('../validators/auth.validator');
 
 // ── Public Routes ──────────────────────────────────────────────────────
 router.post('/login', loginValidator, validate, login);
 router.post('/refresh-token', refreshTokenValidator, validate, refreshToken);
+router.post('/forgot-password', forgotPasswordValidator, validate, forgotPassword);
+router.post('/reset-password/:token', resetPasswordValidator, validate, resetPassword);
 
 // ── Protected Routes ───────────────────────────────────────────────────
 router.use(protect);

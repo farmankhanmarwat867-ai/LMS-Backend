@@ -41,6 +41,10 @@ const branchSchema = new mongoose.Schema(
       enum: ['ACTIVE', 'SUSPENDED', 'INACTIVE'],
       default: 'ACTIVE',
     },
+    logo: {
+      type: String,
+      default: '',
+    },
 
     // Audit & Soft Delete
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

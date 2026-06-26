@@ -18,5 +18,6 @@ router.get('/children/:childId/results', parentPortalController.getChildResults)
 
 // ─── Fees ────────────────────────────────────────────────────────────────────
 router.get('/fees', parentPortalController.getFees);
+router.get('/children/:childId/fees', parentPortalController.getChildFees);
 
 module.exports = router;

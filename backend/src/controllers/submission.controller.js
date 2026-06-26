@@ -71,10 +71,21 @@ const gradeSubmission = async (req, res, next) => {
   }
 };
 
+// ── DELETE /api/submissions/:id ──────────────────────────────────────────────
+const unsubmitAssignment = async (req, res, next) => {
+  try {
+    await submissionService.unsubmitAssignment(req.params.id, req.user);
+    return success(res, null, 'Submission removed successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   submitAssignment,
   getSubmissionsByAssignment,
   getMySubmissions,
   getStudentSubmissions,
   gradeSubmission,
+  unsubmitAssignment,
 };

@@ -1,5 +1,5 @@
 const assignmentRepository = require('../repositories/assignment.repository');
-const courseRepository = require('../repositories/course.repository');
+const subjectRepository = require('../repositories/subject.repository');
 const enrollmentRepository = require('../repositories/enrollment.repository');
 const submissionRepository = require('../repositories/submission.repository');
 const AuditLogger = require('../utils/auditLogger');
@@ -8,20 +8,20 @@ const { ROLES } = require('../constants/roles');
 // ── Create Assignment ───────────────────────────────────────────────────────
 const createAssignment = async (data, user, tenantFilter) => {
   // 1. Validate course exists and belongs to tenant
-  const course = await courseRepository.findById(data.courseId);
-  if (!course) throw { status: 404, message: 'Course not found' };
+  const course = await subjectRepository.findById(data.courseId);
+  if (!course) throw { status: 404, message: 'Subject not found' };
 
   if (
     tenantFilter.instituteId &&
     course.instituteId?.toString() !== tenantFilter.instituteId?.toString()
   ) {
-    throw { status: 404, message: 'Course not found' };
+    throw { status: 404, message: 'Subject not found' };
   }
 
   // 2. Validate teacher owns the course
   // If user is TEACHER, course.teacherId must match user._id
   if (user.role === ROLES.TEACHER && course.teacherId?.toString() !== user._id.toString()) {
-    throw { status: 403, message: 'You can only create assignments for your own courses' };
+    throw { status: 403, message: 'You can only create assignments for your own subjects' };
   }
 
   // 3. Create the assignment
@@ -70,7 +70,7 @@ const getAssignments = async (query, user, tenantFilter) => {
        // Check if student is enrolled in the requested course
        const isEnrolled = await enrollmentRepository.find({ studentId: user._id, courseId: courseId, status: 'ACTIVE' });
        if (!isEnrolled || isEnrolled.length === 0) {
-          throw { status: 403, message: 'You are not enrolled in this course' };
+          throw { status: 403, message: 'You are not enrolled in this subject' };
        }
     }
   }
@@ -96,7 +96,7 @@ const getAssignmentById = async (id, user, tenantFilter) => {
     // Check enrollment
     const isEnrolled = await enrollmentRepository.find({ studentId: user._id, courseId: assignment.courseId._id, status: 'ACTIVE' });
     if (!isEnrolled || isEnrolled.length === 0) {
-      throw { status: 403, message: 'You are not enrolled in this course' };
+      throw { status: 403, message: 'You are not enrolled in this subject' };
     }
   }
 

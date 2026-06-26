@@ -26,4 +26,22 @@ const refreshTokenValidator = [
   body('refreshToken').notEmpty().withMessage('Refresh token is required'),
 ];
 
-module.exports = { loginValidator, registerValidator, changePasswordValidator, refreshTokenValidator };
+const forgotPasswordValidator = [
+  body('email').isEmail().withMessage('Please provide a valid email').normalizeEmail(),
+];
+
+const resetPasswordValidator = [
+  body('password')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/)
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+];
+
+module.exports = { 
+  loginValidator, 
+  registerValidator, 
+  changePasswordValidator, 
+  refreshTokenValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator
+};

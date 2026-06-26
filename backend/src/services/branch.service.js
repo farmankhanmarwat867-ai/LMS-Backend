@@ -49,6 +49,7 @@ const createBranch = async (data, user) => {
           email: data.email,
           phone: data.phone,
           address: data.address,
+          logo: data.logo,
           instituteId: user.instituteId,
           createdBy: user._id,
         },
@@ -80,7 +81,9 @@ const createBranch = async (data, user) => {
 
     return { branch, adminUser: { id: adminUser._id, name: adminUser.name, email: adminUser.email } };
   } catch (error) {
-    await session.abortTransaction();
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     session.endSession();
     throw error;
   }
@@ -129,8 +132,22 @@ const deleteBranch = async (id, user, tenantFilter) => {
 
   await branchRepository.softDelete(id, user._id);
   
-  // Also suspend all users belonging to this branch
-  await userRepository.model.updateMany({ branchId: id }, { isActive: false, updatedBy: user._id });
+  // Release unique name constraint
+  await branchRepository.model.findByIdAndUpdate(id, {
+    name: `${branch.name}-DELETED-${Date.now()}`
+  });
+
+  // Soft-delete all users belonging to this branch and release their emails to prevent unique index collision
+  const users = await userRepository.model.find({ branchId: id });
+  for (const u of users) {
+    await userRepository.model.findByIdAndUpdate(u._id, {
+      isDeleted: true,
+      deletedAt: new Date(),
+      isActive: false,
+      email: `${u.email}-deleted-${Date.now()}`,
+      updatedBy: user._id
+    });
+  }
 
   await auditLog({ userId: user._id, role: user.role, action: 'SOFT_DELETE', resource: 'Branch', resourceId: id });
 };

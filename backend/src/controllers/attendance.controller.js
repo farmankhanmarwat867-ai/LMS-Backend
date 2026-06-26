@@ -32,6 +32,7 @@ const getAttendance = async (req, res, next) => {
 // ── GET /api/attendance/student/:studentId ────────────────────────────────────
 const getStudentAttendance = async (req, res, next) => {
   try {
+    console.log("GET STUDENT ATTENDANCE:", req.params.studentId, req.query, req.tenantFilter);
     const { data, pagination, summary } = await attendanceService.getStudentAttendance(
       req.params.studentId,
       req.query,

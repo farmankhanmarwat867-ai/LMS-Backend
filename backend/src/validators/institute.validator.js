@@ -6,6 +6,7 @@ const createInstituteValidator = [
   body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('phone').trim().notEmpty().withMessage('Phone number is required'),
   body('planId').isMongoId().withMessage('Valid Plan ID is required'),
+  body('logo').optional().trim(),
   
   // Admin user details needed for auto-creation
   body('adminName').trim().notEmpty().withMessage('Admin name is required'),
@@ -17,6 +18,7 @@ const updateInstituteValidator = [
   body('name').optional().trim().notEmpty().withMessage('Institute name cannot be empty'),
   body('phone').optional().trim().notEmpty(),
   body('status').optional().isIn(['ACTIVE', 'SUSPENDED', 'INACTIVE']).withMessage('Invalid status'),
+  body('logo').optional().trim(),
 ];
 
 module.exports = { createInstituteValidator, updateInstituteValidator };

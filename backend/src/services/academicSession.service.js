@@ -69,7 +69,9 @@ const createSession = async (data, user) => {
 
 // ── Get All Sessions ───────────────────────────────────────────────────
 const getAllSessions = async (queryOptions, tenantFilter) => {
-  const query = { ...tenantFilter };
+  // Sessions are institute-level (no branchId field) — only filter by instituteId
+  const query = {};
+  if (tenantFilter.instituteId) query.instituteId = tenantFilter.instituteId;
 
   // Optional filters
   if (queryOptions.status) query.status = queryOptions.status;
@@ -167,12 +169,12 @@ const changeSessionStatus = async (id, newStatus, user, tenantFilter) => {
   const session = await academicSessionRepository.findOne({ _id: id, ...tenantFilter });
   if (!session) throw { status: 404, message: 'Academic session not found or access denied' };
 
-  // Status transition rules
+  // Status transition rules (flexible to support deactivation toggling)
   const validTransitions = {
     UPCOMING:  ['ACTIVE', 'CANCELLED'],
-    ACTIVE:    ['COMPLETED', 'CANCELLED'],
-    COMPLETED: [],
-    CANCELLED: [],
+    ACTIVE:    ['UPCOMING', 'COMPLETED', 'CANCELLED'],
+    COMPLETED: ['ACTIVE'],
+    CANCELLED: ['UPCOMING'],
   };
 
   if (!validTransitions[session.status].includes(newStatus)) {

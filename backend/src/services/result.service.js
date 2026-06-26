@@ -72,37 +72,28 @@ const calculateGradeAndStatus = (marksObtained, totalMarks, passingMarks, explic
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Validate that a student belongs to the same Institute/Branch/Class/Section
- * as the ExamSchedule, and has an active enrollment in the schedule's course.
+ * Validate that a student belongs to the same Institute/Branch/Class as the
+ * ExamSchedule. Section is intentionally NOT checked — a schedule covers the
+ * whole class and a teacher should be able to record results for any student
+ * in that class regardless of section.
  */
 const validateStudentForSchedule = async (student, schedule) => {
-  if (String(student.instituteId) !== String(schedule.instituteId)) {
+  // Helper: safely get string ID whether the field is a raw ObjectId or a populated sub-doc
+  const id = (val) => (val?._id ? String(val._id) : String(val));
+
+  if (id(student.instituteId) !== id(schedule.instituteId)) {
     throw { status: 400, message: 'Student does not belong to this institute' };
   }
-  if (String(student.branchId) !== String(schedule.branchId)) {
+  if (id(student.branchId) !== id(schedule.branchId)) {
     throw { status: 400, message: 'Student does not belong to this branch' };
   }
-  if (String(student.classId) !== String(schedule.classId)) {
+  if (id(student.classId) !== id(schedule.classId)) {
     throw { status: 400, message: 'Student does not belong to this class' };
   }
-  if (String(student.sectionId) !== String(schedule.sectionId)) {
-    throw { status: 400, message: 'Student does not belong to this section' };
-  }
-
-  // Active enrollment check — student must be enrolled in the schedule's course
-  const enrollment = await Enrollment.findOne({
-    studentId: student._id,
-    courseId:  schedule.courseId,
-    isDeleted: false,
-    status: { $in: ['ACTIVE', 'COMPLETED'] },
-  });
-  if (!enrollment) {
-    throw {
-      status: 400,
-      message: `Student is not enrolled in the course linked to this exam schedule`,
-    };
-  }
+  // NOTE: Section check removed — class-level match is sufficient for result entry.
 };
+
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  SERVICE FUNCTIONS
@@ -121,7 +112,8 @@ const createResult = async (data, user) => {
   }
 
   // 2. Teacher RBAC — only for their assigned schedule
-  if (user.role === 'TEACHER' && String(schedule.teacherId) !== String(user._id)) {
+  const schedTeacherId = schedule.teacherId?._id ? String(schedule.teacherId._id) : String(schedule.teacherId);
+  if (user.role === 'TEACHER' && schedTeacherId !== String(user._id)) {
     throw { status: 403, message: 'You are not authorized to add results for this schedule' };
   }
 
@@ -239,6 +231,7 @@ const getResults = async (filters, pagination, user) => {
       })
       .populate('classId',   'name code')
       .populate('sectionId', 'name')
+      .populate('instituteId', 'name logo')
       .lean(),
     Result.countDocuments(query),
   ]);
@@ -274,11 +267,10 @@ const getResultById = async (id, user) => {
     .populate('studentId',  'name email avatar phone')
     .populate({
       path: 'examScheduleId',
-      select: 'examDate totalMarks passingMarks startTime endTime roomNumber subjectId examId courseId',
+      select: 'examDate totalMarks passingMarks startTime endTime roomNumber subjectId examId',
       populate: [
         { path: 'subjectId', select: 'name code' },
         { path: 'examId',    select: 'title examCode' },
-        { path: 'courseId',  select: 'title' },
       ],
     })
     .populate('classId',     'name code')

@@ -44,7 +44,7 @@ const fileSchema = new mongoose.Schema(
     instituteId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Institute',
-      required: true,
+      required: false,
     },
     branchId: {
       type: mongoose.Schema.Types.ObjectId,

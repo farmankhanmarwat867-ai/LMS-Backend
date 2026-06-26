@@ -16,6 +16,23 @@ const createUser = async (req, res, next) => {
   }
 };
 
+// ── POST /api/users/bulk-import ────────────────────────────────────────────────
+const bulkImportStudents = async (req, res, next) => {
+  try {
+    const { students } = req.body;
+    if (!Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({ success: false, message: 'students array is required and must not be empty' });
+    }
+    if (students.length > 500) {
+      return res.status(400).json({ success: false, message: 'Maximum 500 students per import batch' });
+    }
+    const results = await userService.bulkImportStudents(students, req.user);
+    return success(res, results, `Bulk import complete: ${results.created.length} created, ${results.failed.length} failed`);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── GET /api/users ─────────────────────────────────────────────────────────────
 const getAllUsers = async (req, res, next) => {
   try {
@@ -29,7 +46,7 @@ const getAllUsers = async (req, res, next) => {
 // ── GET /api/users/:id ─────────────────────────────────────────────────────────
 const getUserById = async (req, res, next) => {
   try {
-    const user = await userService.getUserById(req.params.id, req.tenantFilter);
+    const user = await userService.getUserById(req.params.id, req.tenantFilter, req.user._id);
     return success(res, user, 'User retrieved successfully');
   } catch (err) {
     next(err);
@@ -106,6 +123,7 @@ const unlinkStudentFromParent = async (req, res, next) => {
 
 module.exports = {
   createUser,
+  bulkImportStudents,
   getAllUsers,
   getUserById,
   updateUser,

@@ -28,7 +28,7 @@ class ResultRepository extends BaseRepository {
    * @returns {Promise<Object>} Paginated results
    */
   async findByStudentId(studentId, extraFilter = {}, options = {}) {
-    const query = { studentId, isDeleted: false, ...extraFilter };
+    const query = { studentId, isDeleted: false, isPublished: true, ...extraFilter };
     const page  = Math.max(parseInt(options.page)  || 1, 1);
     const limit = Math.min(parseInt(options.limit) || 10, 100);
     const skip  = (page - 1) * limit;
@@ -46,6 +46,7 @@ class ResultRepository extends BaseRepository {
             { path: 'examId',    select: 'title examCode' },
           ],
         })
+        .populate('studentId', 'name email avatar')
         .populate('classId',   'name code')
         .populate('sectionId', 'name')
         .lean(),

@@ -55,6 +55,7 @@ class UserRepository extends BaseRepository {
     if (filters.role)     query.role     = filters.role;
     if (filters.isActive !== undefined) query.isActive = filters.isActive;
     if (filters.branchId) query.branchId = filters.branchId;
+    if (filters.classId)  query.classId  = filters.classId;
     if (filters.search) {
       query.$or = [
         { name:  { $regex: filters.search, $options: 'i' } },
@@ -73,6 +74,8 @@ class UserRepository extends BaseRepository {
         .limit(limit)
         .populate('instituteId', 'name logo')
         .populate('branchId',    'name code')
+        .populate('classId',     'name code')
+        .populate('sectionId',   'name')
         .populate('createdBy',   'name email'),
       User.countDocuments(query),
     ]);

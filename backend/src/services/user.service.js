@@ -17,6 +17,27 @@ const { ROLES }           = require('../constants/roles');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const generateNextStudentId = async () => {
+  const currentYear = new Date().getFullYear();
+  const prefix = `STD-${currentYear}-`;
+  
+  // Find the highest studentId for the current year
+  const lastStudent = await userRepository.model.findOne({
+    studentId: new RegExp(`^${prefix}`)
+  }).sort({ studentId: -1 });
+
+  let sequence = 1;
+  if (lastStudent && lastStudent.studentId) {
+    const lastSequence = parseInt(lastStudent.studentId.split('-')[2], 10);
+    if (!isNaN(lastSequence)) {
+      sequence = lastSequence + 1;
+    }
+  }
+
+  const paddedSequence = sequence.toString().padStart(6, '0');
+  return `${prefix}${paddedSequence}`;
+};
+
 /**
  * Enforce role-creation permissions based on the creator's role.
  * Returns { instituteId, branchId } to stamp on the new user.
@@ -130,7 +151,17 @@ const createUser = async (data, creatorUser) => {
   const existing = await userRepository.findByEmail(data.email);
   if (existing) throw { status: 409, message: 'A user with this email already exists' };
 
-  // 4. Create user
+  // 4. Generate Student ID if role is STUDENT
+  let studentId = undefined;
+  let qrCodeValue = undefined;
+  let rollNumber = data.rollNumber || undefined;
+
+  if (data.role === ROLES.STUDENT) {
+    studentId = await generateNextStudentId();
+    qrCodeValue = studentId; // Permanent QR code
+  }
+
+  // 5. Create user
   const user = await userRepository.create({
     name:        data.name,
     email:       data.email,
@@ -140,12 +171,17 @@ const createUser = async (data, creatorUser) => {
     avatar:      data.avatar      || '',
     instituteId: instituteId,
     branchId:    branchId,
+    classId:     data.role === ROLES.STUDENT ? (data.classId || null) : null,
+    sectionId:   data.role === ROLES.STUDENT ? (data.sectionId || null) : null,
+    studentId:   studentId,
+    qrCodeValue: qrCodeValue,
+    rollNumber:  rollNumber,
     parentOf:    data.role === ROLES.PARENT ? (data.parentOf || []) : [],
     createdBy:   creatorUser._id,
     updatedBy:   creatorUser._id,
   });
 
-  // 5. Audit log
+  // 6. Audit log
   await auditLog({
     userId:     creatorUser._id,
     role:       creatorUser.role,
@@ -167,9 +203,10 @@ const getAllUsers = async (queryOptions, tenantFilter) => {
 };
 
 // ─── Get User By ID ───────────────────────────────────────────────────────────
-const getUserById = async (id, tenantFilter) => {
-  const query = { _id: id, ...tenantFilter };
-  const user  = await userRepository.findOne(query, 'instituteId branchId createdBy');
+const getUserById = async (id, tenantFilter, requesterId) => {
+  const isSelfRequest = id.toString() === requesterId?.toString();
+  const query = isSelfRequest ? { _id: id } : { _id: id, ...tenantFilter };
+  const user  = await userRepository.findOne(query, 'instituteId branchId classId sectionId createdBy');
 
   if (!user) throw { status: 404, message: 'User not found or access denied' };
   return user;
@@ -177,9 +214,18 @@ const getUserById = async (id, tenantFilter) => {
 
 // ─── Update User ──────────────────────────────────────────────────────────────
 const updateUser = async (id, data, updaterUser, tenantFilter) => {
-  // Verify the target user is in this tenant's scope
-  const existing = await userRepository.findOne({ _id: id, ...tenantFilter });
+  // Verify the target user is in this tenant's scope (unless they are updating themselves)
+  const isSelfUpdate = id.toString() === updaterUser._id.toString();
+  const query = isSelfUpdate ? { _id: id } : { _id: id, ...tenantFilter };
+  
+  const existing = await userRepository.findOne(query);
   if (!existing) throw { status: 404, message: 'User not found or access denied' };
+
+  // If email is being updated, verify it is unique
+  if (data.email && data.email !== existing.email) {
+    const emailExists = await userRepository.findOne({ email: data.email });
+    if (emailExists) throw { status: 409, message: 'Email address is already in use' };
+  }
 
   // If branchId is being changed, verify new branch belongs to same institute
   if (data.branchId && existing.instituteId) {
@@ -190,8 +236,16 @@ const updateUser = async (id, data, updaterUser, tenantFilter) => {
     if (!branch) throw { status: 404, message: 'Branch not found or does not belong to this institute' };
   }
 
+  const updatePayload = { ...data };
+  if (updatePayload.hasOwnProperty('classId')) {
+    updatePayload.classId = updatePayload.classId || null;
+  }
+  if (updatePayload.hasOwnProperty('sectionId')) {
+    updatePayload.sectionId = updatePayload.sectionId || null;
+  }
+
   const updated = await userRepository.updateById(id, {
-    ...data,
+    ...updatePayload,
     updatedBy: updaterUser._id,
   });
 
@@ -253,6 +307,11 @@ const deleteUser = async (id, deleterUser, tenantFilter) => {
   }
 
   await userRepository.softDelete(id, deleterUser._id);
+  
+  // Release user email unique index constraint
+  await userRepository.model.findByIdAndUpdate(id, {
+    email: `${existing.email}-deleted-${Date.now()}`
+  });
 
   await auditLog({
     userId:     deleterUser._id,
@@ -328,4 +387,82 @@ module.exports = {
   getChildrenOfParent,
   linkStudentToParent,
   unlinkStudentFromParent,
+  bulkImportStudents,
 };
+
+// ─── Bulk Import Students ─────────────────────────────────────────────────────
+async function bulkImportStudents(rows, creatorUser) {
+  const { instituteId } = creatorUser;
+
+  // Enforce plan limits once upfront (approx check)
+  await enforcePlanLimits(instituteId, ROLES.STUDENT);
+
+  const results = { created: [], failed: [] };
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2; // header = row 1
+
+    try {
+      // Basic field validation
+      if (!row.name || !row.email) {
+        results.failed.push({ row: rowNum, email: row.email || '(empty)', reason: 'name and email are required' });
+        continue;
+      }
+
+      // Check email uniqueness
+      const existing = await userRepository.findByEmail(row.email.trim().toLowerCase());
+      if (existing) {
+        results.failed.push({ row: rowNum, email: row.email, reason: 'Email already exists' });
+        continue;
+      }
+
+      // Resolve branchId
+      if (!row.branchId) {
+        results.failed.push({ row: rowNum, email: row.email, reason: 'branchId is required' });
+        continue;
+      }
+      const branch = await branchRepository.findOne({ _id: row.branchId, instituteId });
+      if (!branch) {
+        results.failed.push({ row: rowNum, email: row.email, reason: 'Branch not found or does not belong to this institute' });
+        continue;
+      }
+
+      const studentId = await generateNextStudentId();
+
+      const user = await userRepository.create({
+        name:        row.name.trim(),
+        email:       row.email.trim().toLowerCase(),
+        password:    row.password || 'Edu123456',
+        role:        ROLES.STUDENT,
+        phone:       row.phone        || '',
+        avatar:      '',
+        instituteId: instituteId,
+        branchId:    row.branchId,
+        classId:     row.classId      || null,
+        sectionId:   row.sectionId    || null,
+        studentId:   studentId,
+        qrCodeValue: studentId,
+        rollNumber:  row.rollNumber   || undefined,
+        parentOf:    [],
+        createdBy:   creatorUser._id,
+        updatedBy:   creatorUser._id,
+      });
+
+      results.created.push({ row: rowNum, email: user.email, name: user.name });
+
+      await auditLog({
+        userId:     creatorUser._id,
+        role:       creatorUser.role,
+        action:     'BULK_CREATE',
+        resource:   'User',
+        resourceId: user._id,
+        metadata:   { email: user.email },
+      });
+    } catch (err) {
+      results.failed.push({ row: rowNum, email: row.email || '(error)', reason: err.message || 'Unknown error' });
+    }
+  }
+
+  return results;
+}

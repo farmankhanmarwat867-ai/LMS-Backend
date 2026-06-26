@@ -3,7 +3,7 @@ const { body, query } = require('express-validator');
 const createCourseValidator = [
   body('title')
     .trim()
-    .notEmpty().withMessage('Course title is required')
+    .notEmpty().withMessage('Subject title is required')
     .isLength({ max: 150 }).withMessage('Title cannot exceed 150 characters'),
     
   body('description')

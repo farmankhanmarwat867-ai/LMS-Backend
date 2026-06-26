@@ -26,12 +26,20 @@ class ExamScheduleRepository extends BaseRepository {
         .sort({ examDate: 1, startTime: 1 })
         .skip(skip)
         .limit(limit)
-        .populate('examId', 'title examCode examType status startDate endDate')
+        .populate({
+          path: 'examId',
+          select: 'title examCode examType status startDate endDate sessionId',
+          populate: {
+            path: 'sessionId',
+            select: 'name'
+          }
+        })
         .populate('subjectId', 'name code')
-        .populate('courseId', 'title')
         .populate('teacherId', 'name email avatar')
         .populate('classId', 'name code')
         .populate('sectionId', 'name')
+        .populate('instituteId', 'name logo email phone address')
+        .populate('branchId', 'name email phone address')
         .populate('createdBy', 'name role')
         .populate('updatedBy', 'name role'),
       ExamSchedule.countDocuments(query),
@@ -52,14 +60,20 @@ class ExamScheduleRepository extends BaseRepository {
 
   async findByIdPopulated(id, tenantFilter) {
     return this.model.findOne({ _id: id, ...tenantFilter, isDeleted: false })
-      .populate('examId', 'title examCode examType status startDate endDate')
+      .populate({
+        path: 'examId',
+        select: 'title examCode examType status startDate endDate sessionId',
+        populate: {
+          path: 'sessionId',
+          select: 'name'
+        }
+      })
       .populate('subjectId', 'name code')
-      .populate('courseId', 'title')
       .populate('teacherId', 'name email avatar')
       .populate('classId', 'name code')
       .populate('sectionId', 'name')
-      .populate('instituteId', 'name')
-      .populate('branchId', 'name')
+      .populate('instituteId', 'name logo email phone address')
+      .populate('branchId', 'name email phone address')
       .populate('createdBy', 'name role')
       .populate('updatedBy', 'name role');
   }
