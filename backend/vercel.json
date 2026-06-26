@@ -1,5 +1,22 @@
 {
   "version": 2,
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "5000",
+    "MONGO_URI": "mongodb+srv://farmankhanmarwat867_db_user:UVM0bVnNAG57g00Y@cluster0.ghzjuiz.mongodb.net/?appName=Cluster0",
+    "JWT_SECRET": "supersecretjwtkey12345",
+    "JWT_EXPIRE": "30d",
+    "CLOUDINARY_CLOUD_NAME": "dlhajjbxm",
+    "CLOUDINARY_API_KEY": "859815724433729",
+    "CLOUDINARY_API_SECRET": "QtsfVUZmPWf3mJkhFvCxd3xADyQ",
+    "EMAIL_PROVIDER": "gmail",
+    "EMAIL_FROM": "educorelms7@gmail.com",
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "587",
+    "SMTP_SECURE": "false",
+    "SMTP_USER": "educorelms7@gmail.com",
+    "SMTP_PASS": "iiagxarsmnabupcy"
+  },
   "builds": [
     {
       "src": "index.js",
