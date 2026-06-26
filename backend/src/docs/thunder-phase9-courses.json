@@ -1,0 +1,122 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Phase 9 — Course Management",
+  "collectionId": "phase9-courses",
+  "dateExported": "2026-06-05",
+  "version": "1.2",
+  "folders": [
+    { "id": "f01", "name": "📚 Course CRUD", "containerId": "" },
+    { "id": "f02", "name": "🛡️ Security & Validation", "containerId": "" }
+  ],
+  "requests": [
+    {
+      "_id": "r01",
+      "colId": "phase9-courses",
+      "containerId": "f01",
+      "name": "Create Course (TEACHER)",
+      "url": "{{base_url}}/api/courses",
+      "method": "POST",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Physics 101\",\n  \"description\": \"Intro to Physics\",\n  \"teacherId\": \"{{teacher_id}}\",\n  \"subjectId\": \"{{subject_id}}\",\n  \"classId\": \"{{class_id}}\",\n  \"sectionId\": \"{{section_id}}\",\n  \"sessionId\": \"{{session_id}}\",\n  \"branchId\": \"{{branch_a_id}}\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "201" }
+      ]
+    },
+    {
+      "_id": "r02",
+      "colId": "phase9-courses",
+      "containerId": "f01",
+      "name": "Get All Courses",
+      "url": "{{base_url}}/api/courses?page=1&limit=10",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+    {
+      "_id": "r03",
+      "colId": "phase9-courses",
+      "containerId": "f01",
+      "name": "Update Course",
+      "url": "{{base_url}}/api/courses/{{course_id}}",
+      "method": "PUT",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Physics 101 (Updated)\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+    {
+      "_id": "r04",
+      "colId": "phase9-courses",
+      "containerId": "f01",
+      "name": "Change Status",
+      "url": "{{base_url}}/api/courses/{{course_id}}/status",
+      "method": "PATCH",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+    {
+      "_id": "r05",
+      "colId": "phase9-courses",
+      "containerId": "f02",
+      "name": "Create Duplicate Course (Expect 409)",
+      "url": "{{base_url}}/api/courses",
+      "method": "POST",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Duplicate\",\n  \"teacherId\": \"{{teacher_id}}\",\n  \"subjectId\": \"{{subject_id}}\",\n  \"classId\": \"{{class_id}}\",\n  \"sectionId\": \"{{section_id}}\",\n  \"sessionId\": \"{{session_id}}\",\n  \"branchId\": \"{{branch_a_id}}\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "409" }
+      ]
+    },
+    {
+      "_id": "r06",
+      "colId": "phase9-courses",
+      "containerId": "f02",
+      "name": "Teacher creates course for another teacher (Expect 403)",
+      "url": "{{base_url}}/api/courses",
+      "method": "POST",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Hacked Course\",\n  \"teacherId\": \"{{other_teacher_id}}\",\n  \"subjectId\": \"{{subject_id}}\",\n  \"classId\": \"{{class_id}}\",\n  \"sectionId\": \"{{section_id}}\",\n  \"sessionId\": \"{{session_id}}\",\n  \"branchId\": \"{{branch_a_id}}\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "403" }
+      ]
+    }
+  ]
+}

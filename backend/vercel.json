@@ -9,7 +9,6 @@
     "CLOUDINARY_CLOUD_NAME": "dlhajjbxm",
     "CLOUDINARY_API_KEY": "859815724433729",
     "CLOUDINARY_API_SECRET": "QtsfVUZmPWf3mJkhFvCxd3xADyQ",
-    "CLIENT_URL": "https://educorelms-6iqj.vercel.app",
     "EMAIL_PROVIDER": "gmail",
     "EMAIL_FROM": "educorelms7@gmail.com",
     "SMTP_HOST": "smtp.gmail.com",
@@ -20,14 +19,14 @@
   },
   "builds": [
     {
-      "src": "backend/index.js",
+      "src": "index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "backend/index.js"
+      "dest": "index.js"
     }
   ]
 }

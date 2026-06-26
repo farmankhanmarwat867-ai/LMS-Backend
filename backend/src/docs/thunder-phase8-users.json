@@ -1,0 +1,528 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Phase 8 — User Management",
+  "collectionId": "phase8-user-management",
+  "dateExported": "2026-06-05",
+  "version": "1.2",
+  "folders": [
+    { "id": "f01", "name": "🔐 Auth — Get Tokens",           "containerId": "" },
+    { "id": "f02", "name": "👤 User CRUD",                   "containerId": "" },
+    { "id": "f03", "name": "🔄 User Status",                  "containerId": "" },
+    { "id": "f04", "name": "👨‍👩‍👧 Parent-Student Linking",     "containerId": "" },
+    { "id": "f05", "name": "🚫 Plan Limit Tests",             "containerId": "" },
+    { "id": "f06", "name": "🛡️ RBAC / Tenant Guard Tests",   "containerId": "" }
+  ],
+  "requests": [
+
+    // ═══════════════════════════════════════════════════
+    // FOLDER 1 — Auth: Get Tokens
+    // ═══════════════════════════════════════════════════
+    {
+      "_id": "r001",
+      "colId": "phase8-user-management",
+      "containerId": "f01",
+      "name": "Login — SUPER_ADMIN",
+      "url": "{{base_url}}/api/auth/login",
+      "method": "POST",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"superadmin@seedlms.com\",\n  \"password\": \"Admin@1234\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "true" },
+        { "type": "json-query", "custom": "$.data.accessToken", "action": "isValue" }
+      ]
+    },
+    {
+      "_id": "r002",
+      "colId": "phase8-user-management",
+      "containerId": "f01",
+      "name": "Login — INSTITUTE_ADMIN",
+      "url": "{{base_url}}/api/auth/login",
+      "method": "POST",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"iadmin@seedlms.com\",\n  \"password\": \"Admin@1234\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+    {
+      "_id": "r003",
+      "colId": "phase8-user-management",
+      "containerId": "f01",
+      "name": "Login — BRANCH_ADMIN (Main)",
+      "url": "{{base_url}}/api/auth/login",
+      "method": "POST",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"badmin.main@seedlms.com\",\n  \"password\": \"Admin@1234\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+    {
+      "_id": "r004",
+      "colId": "phase8-user-management",
+      "containerId": "f01",
+      "name": "Login — TEACHER",
+      "url": "{{base_url}}/api/auth/login",
+      "method": "POST",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"teacher1@seedlms.com\",\n  \"password\": \"Teacher@123\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+
+    // ═══════════════════════════════════════════════════
+    // FOLDER 2 — User CRUD
+    // ═══════════════════════════════════════════════════
+    {
+      "_id": "r010",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Create User — TEACHER (by INSTITUTE_ADMIN)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"New Teacher\",\n  \"email\": \"newteacher@seedlms.com\",\n  \"password\": \"Teacher@123\",\n  \"role\": \"TEACHER\",\n  \"phone\": \"+923098765432\",\n  \"branchId\": \"{{branch_a_id}}\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "$.success",    "action": "equal",   "value": "true" },
+        { "type": "json-query", "custom": "$.data.role",  "action": "equal",   "value": "TEACHER" },
+        { "type": "json-query", "custom": "$.data.email", "action": "equal",   "value": "newteacher@seedlms.com" }
+      ]
+    },
+    {
+      "_id": "r011",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Create User — STUDENT (by BRANCH_ADMIN)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ba_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"New Student\",\n  \"email\": \"newstudent@seedlms.com\",\n  \"password\": \"Student@123\",\n  \"role\": \"STUDENT\",\n  \"phone\": \"+923087654321\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "$.data.role", "action": "equal", "value": "STUDENT" }
+      ]
+    },
+    {
+      "_id": "r012",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Create User — PARENT (by BRANCH_ADMIN)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ba_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"New Parent\",\n  \"email\": \"newparent@seedlms.com\",\n  \"password\": \"Parent@123\",\n  \"role\": \"PARENT\",\n  \"phone\": \"+923076543210\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "$.data.role", "action": "equal", "value": "PARENT" }
+      ]
+    },
+    {
+      "_id": "r013",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Create User — INSTITUTE_ADMIN (by SUPER_ADMIN)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{sa_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"New Institute Admin\",\n  \"email\": \"newiadmin@seedlms.com\",\n  \"password\": \"Admin@1234\",\n  \"role\": \"INSTITUTE_ADMIN\",\n  \"instituteId\": \"{{institute_id}}\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "$.data.role", "action": "equal", "value": "INSTITUTE_ADMIN" }
+      ]
+    },
+    {
+      "_id": "r014",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Get All Users — INSTITUTE_ADMIN (paginated)",
+      "url": "{{base_url}}/api/users?page=1&limit=10",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code",   "custom": "",                     "action": "equal",   "value": "200" },
+        { "type": "json-query", "custom": "$.success",            "action": "equal",   "value": "true" },
+        { "type": "json-query", "custom": "$.pagination.page",    "action": "equal",   "value": "1" },
+        { "type": "json-query", "custom": "$.pagination.limit",   "action": "equal",   "value": "10" }
+      ]
+    },
+    {
+      "_id": "r015",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Get All Users — Filter by role=TEACHER",
+      "url": "{{base_url}}/api/users?role=TEACHER&page=1&limit=20",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+    {
+      "_id": "r016",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Get All Users — Search by name",
+      "url": "{{base_url}}/api/users?search=Ahmed",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" }
+      ]
+    },
+    {
+      "_id": "r017",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Get User By ID",
+      "url": "{{base_url}}/api/users/{{user_id}}",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code",   "custom": "",             "action": "equal",   "value": "200" },
+        { "type": "json-query", "custom": "$.data._id",   "action": "isValue" }
+      ]
+    },
+    {
+      "_id": "r018",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Update User — Name & Phone",
+      "url": "{{base_url}}/api/users/{{user_id}}",
+      "method": "PUT",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"+923011223344\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "",              "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "$.data.name",   "action": "equal", "value": "Updated Name" }
+      ]
+    },
+    {
+      "_id": "r019",
+      "colId": "phase8-user-management",
+      "containerId": "f02",
+      "name": "Delete User — Soft Delete (SUPER_ADMIN)",
+      "url": "{{base_url}}/api/users/{{user_id}}",
+      "method": "DELETE",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{sa_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "true" }
+      ]
+    },
+
+    // ═══════════════════════════════════════════════════
+    // FOLDER 3 — User Status
+    // ═══════════════════════════════════════════════════
+    {
+      "_id": "r020",
+      "colId": "phase8-user-management",
+      "containerId": "f03",
+      "name": "Deactivate User",
+      "url": "{{base_url}}/api/users/{{user_id}}/status",
+      "method": "PATCH",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"isActive\": false\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "",                  "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "$.data.isActive",   "action": "equal", "value": "false" }
+      ]
+    },
+    {
+      "_id": "r021",
+      "colId": "phase8-user-management",
+      "containerId": "f03",
+      "name": "Activate User",
+      "url": "{{base_url}}/api/users/{{user_id}}/status",
+      "method": "PATCH",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"isActive\": true\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "",                "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "$.data.isActive", "action": "equal", "value": "true" }
+      ]
+    },
+
+    // ═══════════════════════════════════════════════════
+    // FOLDER 4 — Parent-Student Linking
+    // ═══════════════════════════════════════════════════
+    {
+      "_id": "r030",
+      "colId": "phase8-user-management",
+      "containerId": "f04",
+      "name": "Get Children of Parent",
+      "url": "{{base_url}}/api/users/parents/{{parent_id}}/children",
+      "method": "GET",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal",   "value": "200" },
+        { "type": "json-query", "custom": "$.success", "action": "equal",   "value": "true" }
+      ]
+    },
+    {
+      "_id": "r031",
+      "colId": "phase8-user-management",
+      "containerId": "f04",
+      "name": "Link Student to Parent",
+      "url": "{{base_url}}/api/users/parents/{{parent_id}}/link/{{student_id}}",
+      "method": "POST",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "true" }
+      ]
+    },
+    {
+      "_id": "r032",
+      "colId": "phase8-user-management",
+      "containerId": "f04",
+      "name": "Unlink Student from Parent",
+      "url": "{{base_url}}/api/users/parents/{{parent_id}}/unlink/{{student_id}}",
+      "method": "DELETE",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "true" }
+      ]
+    },
+    {
+      "_id": "r033",
+      "colId": "phase8-user-management",
+      "containerId": "f04",
+      "name": "Link Student — Duplicate (expects 409)",
+      "url": "{{base_url}}/api/users/parents/{{parent_id}}/link/{{student_id}}",
+      "method": "POST",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "409" }
+      ]
+    },
+
+    // ═══════════════════════════════════════════════════
+    // FOLDER 5 — Plan Limit Tests
+    // ═══════════════════════════════════════════════════
+    {
+      "_id": "r040",
+      "colId": "phase8-user-management",
+      "containerId": "f05",
+      "name": "Create User — Duplicate Email (expects 409)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Dup User\",\n  \"email\": \"student1@seedlms.com\",\n  \"password\": \"Student@123\",\n  \"role\": \"STUDENT\",\n  \"branchId\": \"{{branch_a_id}}\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal", "value": "409" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "false" }
+      ]
+    },
+    {
+      "_id": "r041",
+      "colId": "phase8-user-management",
+      "containerId": "f05",
+      "name": "Create User — Missing Required Fields (expects 400)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"\",\n  \"email\": \"not-an-email\",\n  \"password\": \"123\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "false" },
+        { "type": "json-query", "custom": "$.errors",  "action": "isValue" }
+      ]
+    },
+    {
+      "_id": "r042",
+      "colId": "phase8-user-management",
+      "containerId": "f05",
+      "name": "Update User — Try to change email (expects 400)",
+      "url": "{{base_url}}/api/users/{{user_id}}",
+      "method": "PUT",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"hacker@evil.com\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" }
+      ]
+    },
+
+    // ═══════════════════════════════════════════════════
+    // FOLDER 6 — RBAC / Tenant Guard Tests
+    // ═══════════════════════════════════════════════════
+    {
+      "_id": "r050",
+      "colId": "phase8-user-management",
+      "containerId": "f06",
+      "name": "TEACHER tries to create user (expects 403)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{teacher_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Unauthorized\",\n  \"email\": \"unauth@test.com\",\n  \"password\": \"Test@1234\",\n  \"role\": \"STUDENT\"\n}"
+      },
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal", "value": "403" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "false" }
+      ]
+    },
+    {
+      "_id": "r051",
+      "colId": "phase8-user-management",
+      "containerId": "f06",
+      "name": "No Token — Access users (expects 401)",
+      "url": "{{base_url}}/api/users",
+      "method": "GET",
+      "headers": [],
+      "tests": [
+        { "type": "res-code",   "custom": "",          "action": "equal", "value": "401" },
+        { "type": "json-query", "custom": "$.success", "action": "equal", "value": "false" }
+      ]
+    },
+    {
+      "_id": "r052",
+      "colId": "phase8-user-management",
+      "containerId": "f06",
+      "name": "BRANCH_ADMIN tries to create INSTITUTE_ADMIN (expects 403)",
+      "url": "{{base_url}}/api/users",
+      "method": "POST",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ba_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Privilege Escalation\",\n  \"email\": \"escalate@test.com\",\n  \"password\": \"Admin@1234\",\n  \"role\": \"INSTITUTE_ADMIN\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "403" }
+      ]
+    },
+    {
+      "_id": "r053",
+      "colId": "phase8-user-management",
+      "containerId": "f06",
+      "name": "INSTITUTE_ADMIN tries to change own status (expects 400)",
+      "url": "{{base_url}}/api/users/{{own_user_id}}/status",
+      "method": "PATCH",
+      "headers": [
+        { "name": "Content-Type",  "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ia_token}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"isActive\": false\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" }
+      ]
+    },
+    {
+      "_id": "r054",
+      "colId": "phase8-user-management",
+      "containerId": "f06",
+      "name": "SUPER_ADMIN tries to delete another SUPER_ADMIN (expects 403)",
+      "url": "{{base_url}}/api/users/{{another_sa_id}}",
+      "method": "DELETE",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{sa_token}}" }
+      ],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "403" }
+      ]
+    }
+  ]
+}
