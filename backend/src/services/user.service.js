@@ -301,9 +301,16 @@ const deleteUser = async (id, deleterUser, tenantFilter) => {
   const existing = await userRepository.findOne({ _id: id, ...tenantFilter });
   if (!existing) throw { status: 404, message: 'User not found or access denied' };
 
-  // Only SUPER_ADMIN & INSTITUTE_ADMIN can delete
+  // Only SUPER_ADMIN, INSTITUTE_ADMIN, & BRANCH_ADMIN can delete
   if (existing.role === ROLES.SUPER_ADMIN) {
     throw { status: 403, message: 'SUPER_ADMIN accounts cannot be deleted' };
+  }
+
+  if (deleterUser.role === ROLES.BRANCH_ADMIN) {
+    const protectedRoles = [ROLES.SUPER_ADMIN, ROLES.INSTITUTE_ADMIN, ROLES.BRANCH_ADMIN];
+    if (protectedRoles.includes(existing.role)) {
+      throw { status: 403, message: 'You cannot delete this role' };
+    }
   }
 
   await userRepository.softDelete(id, deleterUser._id);
