@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { logOut, updateAccessToken } from '../authSlice';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://lms-backend-five-puce.vercel.app/api',
   prepareHeaders: (headers, { getState }) => {
     const state = getState().auth;
     if (state.accessToken) {
